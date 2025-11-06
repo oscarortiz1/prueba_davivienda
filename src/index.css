@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+html, body, #root {
+  height: 100%;
+}
+
+
+.input-focus:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(99,102,241,0.12);
+}

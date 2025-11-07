@@ -5,7 +5,7 @@ import { useUIStore } from '../stores/uiStore'
 import { useToastStore } from '../stores/toastStore'
 import { useResponseStore } from '../stores/responseStore'
 import Button from '../ui/components/Button'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 
 export default function HomePage() {
   const user = useAuthStore((state) => state.user)
@@ -19,10 +19,9 @@ export default function HomePage() {
   const deleteConfirm = useUIStore((state) => state.deleteConfirmId)
   const setDeleteConfirm = useUIStore((state) => state.setDeleteConfirmId)
   const showToast = useToastStore((state) => state.showToast)
-  const checkIfResponded = useResponseStore((state) => state.checkIfResponded)
+  const respondedSurveys = useResponseStore((state) => state.respondedSurveys)
+  const checkRespondedSurveys = useResponseStore((state) => state.checkRespondedSurveys)
   const navigate = useNavigate()
-  
-  const [respondedSurveys, setRespondedSurveys] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     refreshSurveys()
@@ -37,22 +36,10 @@ export default function HomePage() {
 
   useEffect(() => {
     if (user?.email && publishedSurveys.length > 0) {
-      checkRespondedSurveys()
+      const surveyIds = publishedSurveys.map(s => s.id)
+      checkRespondedSurveys(surveyIds, user.email)
     }
-  }, [user, publishedSurveys])
-
-  const checkRespondedSurveys = async () => {
-    if (!user?.email) return
-    
-    const responded = new Set<string>()
-    for (const survey of publishedSurveys) {
-      const hasResponded = await checkIfResponded(survey.id, user.email)
-      if (hasResponded) {
-        responded.add(survey.id)
-      }
-    }
-    setRespondedSurveys(responded)
-  }
+  }, [user, publishedSurveys, checkRespondedSurveys])
 
   const mySurveys = surveys.filter(s => s.createdBy === user?.id)
   const otherPublishedSurveys = publishedSurveys.filter(s => s.createdBy !== user?.id)
@@ -165,6 +152,19 @@ export default function HomePage() {
                       </svg>
                     </button>
                   </div>
+                  
+                  {/* Warning badge for unpublished surveys */}
+                  {!survey.isPublished && (
+                    <div className="mb-3 flex items-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2">
+                      <svg className="h-4 w-4 text-orange-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                      <span className="text-xs font-medium text-orange-800">
+                        Guardado - No publicado
+                      </span>
+                    </div>
+                  )}
+
                   <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">{survey.title}</h3>
                   <p className="mt-1 text-sm text-gray-600 line-clamp-2">{survey.description}</p>
                 </div>

@@ -10,6 +10,7 @@ interface ResponseState {
   survey: any | null
   loading: boolean
   hasResponded: boolean
+  respondedSurveys: Set<string>
   setAnswer: (questionId: string, value: string | string[]) => void
   setRespondentEmail: (email: string) => void
   setSubmitting: (submitting: boolean) => void
@@ -17,6 +18,7 @@ interface ResponseState {
   setLoading: (loading: boolean) => void
   setHasResponded: (hasResponded: boolean) => void
   checkIfResponded: (surveyId: string, email: string) => Promise<boolean>
+  checkRespondedSurveys: (surveyIds: string[], email: string) => Promise<void>
   submitResponse: (surveyId: string) => Promise<void>
   reset: () => void
 }
@@ -28,6 +30,7 @@ export const useResponseStore = create<ResponseState>((set, get) => ({
   survey: null,
   loading: true,
   hasResponded: false,
+  respondedSurveys: new Set<string>(),
 
   setAnswer: (questionId, value) => {
     set(state => ({
@@ -55,6 +58,23 @@ export const useResponseStore = create<ResponseState>((set, get) => ({
     } catch (error) {
       return false
     }
+  },
+
+  checkRespondedSurveys: async (surveyIds, email) => {
+    const responded = new Set<string>()
+    for (const surveyId of surveyIds) {
+      try {
+        const response = await axios.get(`${API_URL}/surveys/${surveyId}/responses`)
+        const responses = response.data
+        const hasResponded = responses.some((r: any) => r.respondentId === email)
+        if (hasResponded) {
+          responded.add(surveyId)
+        }
+      } catch (error) {
+        console.error(`Error checking survey ${surveyId}:`, error)
+      }
+    }
+    set({ respondedSurveys: responded })
   },
 
   submitResponse: async (surveyId) => {

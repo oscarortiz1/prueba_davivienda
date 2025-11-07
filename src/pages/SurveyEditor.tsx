@@ -329,15 +329,18 @@ export default function SurveyEditor() {
 
       <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
         {!isPublished && currentSurveyId && (
-          <div className="mb-6 rounded-xl border border-yellow-200 bg-yellow-50 p-4 shadow-sm">
+          <div className="mb-6 rounded-xl border border-orange-200 bg-orange-50 p-4 shadow-sm">
             <div className="flex items-start gap-3">
-              <svg className="h-5 w-5 text-yellow-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-5 w-5 text-orange-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
               <div>
-                <h3 className="font-semibold text-yellow-900 mb-1">Encuesta en borrador</h3>
-                <p className="text-sm text-yellow-700">
-                  Esta encuesta no es visible públicamente. Debes publicarla para que otros usuarios puedan responderla.
+                <h3 className="font-semibold text-orange-900 mb-1">⚠️ Encuesta guardada pero no publicada</h3>
+                <p className="text-sm text-orange-700 mb-2">
+                  Tu encuesta está guardada pero aún no es visible para otros usuarios.
+                </p>
+                <p className="text-sm font-medium text-orange-800">
+                  👉 Recuerda dar clic en "Publicar" para que otros puedan responderla.
                 </p>
               </div>
             </div>

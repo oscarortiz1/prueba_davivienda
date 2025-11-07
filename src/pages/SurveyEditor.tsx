@@ -16,6 +16,8 @@ export default function SurveyEditor() {
   const getSurvey = useSurveyStore((state) => state.getSurvey)
   const updateSurvey = useSurveyStore((state) => state.updateSurvey)
   const addQuestion = useSurveyStore((state) => state.addQuestion)
+  const updateQuestion = useSurveyStore((state) => state.updateQuestion)
+  const deleteQuestion = useSurveyStore((state) => state.deleteQuestion)
   const publishSurvey = useSurveyStore((state) => state.publishSurvey)
   const showToast = useToastStore((state) => state.showToast)
   
@@ -26,6 +28,7 @@ export default function SurveyEditor() {
   const saving = useEditorStore((state) => state.saving)
   const publishing = useEditorStore((state) => state.publishing)
   const currentSurveyId = useEditorStore((state) => state.currentSurveyId)
+  const hasUnsavedChanges = useEditorStore((state) => state.hasUnsavedChanges)
   const setTitle = useEditorStore((state) => state.setTitle)
   const setDescription = useEditorStore((state) => state.setDescription)
   const setQuestions = useEditorStore((state) => state.setQuestions)
@@ -33,6 +36,7 @@ export default function SurveyEditor() {
   const setSaving = useEditorStore((state) => state.setSaving)
   const setPublishing = useEditorStore((state) => state.setPublishing)
   const setCurrentSurveyId = useEditorStore((state) => state.setCurrentSurveyId)
+  const setHasUnsavedChanges = useEditorStore((state) => state.setHasUnsavedChanges)
   const handleAddQuestion = useEditorStore((state) => state.addQuestion)
   const handleUpdateQuestion = useEditorStore((state) => state.updateQuestion)
   const handleDeleteQuestion = useEditorStore((state) => state.deleteQuestion)
@@ -56,7 +60,13 @@ export default function SurveyEditor() {
       if (survey) {
         setTitle(survey.title)
         setDescription(survey.description)
-        setQuestions(survey.questions)
+        
+        const normalizedQuestions = survey.questions.map(q => ({
+          ...q,
+          type: q.type.toLowerCase().replace(/_/g, '-') as QuestionType
+        }))
+        
+        setQuestions(normalizedQuestions)
       }
     } finally {
       setLoading(false)
@@ -158,7 +168,41 @@ export default function SurveyEditor() {
       } else if ((id && id !== 'new') || currentSurveyId) {
         const surveyId = currentSurveyId || id
         await updateSurvey(surveyId, { title, description })
+        
+        const currentSurvey = await getSurvey(surveyId)
+        const existingQuestions = currentSurvey.questions || []
+        
+        const existingIds = new Set(existingQuestions.map((q: any) => q.id))
+        const currentIds = new Set(questions.filter(q => q.id && !q.id.includes('temp')).map(q => q.id))
+        
+        for (const existingQ of existingQuestions) {
+          if (!currentIds.has(existingQ.id)) {
+            await deleteQuestion(surveyId, existingQ.id)
+          }
+        }
+        
+        for (const q of questions) {
+          if (q.id && !q.id.includes('temp') && existingIds.has(q.id)) {
+            await updateQuestion(surveyId, q.id, {
+              title: q.title,
+              type: q.type.toUpperCase().replace(/-/g, '_'),
+              options: q.options,
+              required: q.required,
+              order: q.order
+            })
+          } else {
+            await addQuestion(surveyId, {
+              title: q.title,
+              type: q.type.toUpperCase().replace(/-/g, '_'),
+              options: q.options,
+              required: q.required,
+              order: q.order
+            })
+          }
+        }
+        
         showToast('Encuesta actualizada exitosamente', 'success')
+        setHasUnsavedChanges(false)
       }
     } catch (error: any) {
       showToast('Error al guardar: ' + (error.response?.data?.message || error.message), 'error')
@@ -172,6 +216,11 @@ export default function SurveyEditor() {
     
     if (!surveyId) {
       showToast('Debes guardar la encuesta primero', 'warning')
+      return
+    }
+    
+    if (hasUnsavedChanges) {
+      showToast('Tienes cambios sin guardar. Guarda la encuesta antes de publicarla.', 'warning')
       return
     }
     
@@ -230,7 +279,7 @@ export default function SurveyEditor() {
               {currentSurveyId && (
                 <Button 
                   onClick={handlePublish} 
-                  disabled={publishing || !title.trim() || questions.length === 0}
+                  disabled={publishing || hasUnsavedChanges || !title.trim() || questions.length === 0}
                 >
                   {publishing ? 'Publicando...' : 'Publicar'}
                 </Button>

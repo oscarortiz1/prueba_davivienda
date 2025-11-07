@@ -1,10 +1,8 @@
 import { create } from 'zustand'
 import { Survey } from '../domain/Survey'
-import { makeSurveyUseCases } from '../usecases/surveyUseCases'
-import { MockSurveyService } from '../infrastructure/MockSurveyService'
+import axios from 'axios'
 
-const surveyService = new MockSurveyService()
-const surveyUseCases = makeSurveyUseCases(surveyService)
+const API_URL = 'http://localhost:8080/api'
 
 interface SurveyState {
   surveys: Survey[]
@@ -12,18 +10,14 @@ interface SurveyState {
   setSurveys: (surveys: Survey[]) => void
   setLoading: (loading: boolean) => void
   refreshSurveys: () => Promise<void>
-  createSurvey: typeof surveyUseCases.createSurvey
-  getSurvey: typeof surveyUseCases.getSurvey
-  updateSurvey: typeof surveyUseCases.updateSurvey
+  createSurvey: (data: { title: string; description: string }) => Promise<Survey>
+  getSurvey: (id: string) => Promise<Survey>
+  updateSurvey: (id: string, data: { title: string; description: string }) => Promise<Survey>
   deleteSurvey: (id: string) => Promise<void>
-  publishSurvey: typeof surveyUseCases.publishSurvey
-  unpublishSurvey: typeof surveyUseCases.unpublishSurvey
-  addQuestion: typeof surveyUseCases.addQuestion
-  updateQuestion: typeof surveyUseCases.updateQuestion
-  deleteQuestion: typeof surveyUseCases.deleteQuestion
-  submitResponse: typeof surveyUseCases.submitResponse
-  getResponses: typeof surveyUseCases.getResponses
-  getSurveyStats: typeof surveyUseCases.getSurveyStats
+  publishSurvey: (id: string) => Promise<Survey>
+  addQuestion: (surveyId: string, question: any) => Promise<Survey>
+  updateQuestion: (surveyId: string, questionId: string, question: any) => Promise<Survey>
+  deleteQuestion: (surveyId: string, questionId: string) => Promise<Survey>
 }
 
 export const useSurveyStore = create<SurveyState>((set, get) => ({
@@ -37,37 +31,55 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
   refreshSurveys: async () => {
     set({ loading: true })
     try {
-      const surveys = await surveyUseCases.getAllSurveys()
-      set({ surveys })
+      const response = await axios.get(`${API_URL}/surveys/my-surveys`)
+      set({ surveys: response.data })
+    } catch (error) {
+      console.error('Error fetching surveys:', error)
     } finally {
       set({ loading: false })
     }
   },
 
-  createSurvey: surveyUseCases.createSurvey,
+  createSurvey: async (data) => {
+    const response = await axios.post(`${API_URL}/surveys`, data)
+    await get().refreshSurveys()
+    return response.data
+  },
   
-  getSurvey: surveyUseCases.getSurvey,
+  getSurvey: async (id) => {
+    const response = await axios.get(`${API_URL}/surveys/${id}`)
+    return response.data
+  },
   
-  updateSurvey: surveyUseCases.updateSurvey,
+  updateSurvey: async (id, data) => {
+    const response = await axios.put(`${API_URL}/surveys/${id}`, data)
+    await get().refreshSurveys()
+    return response.data
+  },
   
   deleteSurvey: async (id: string) => {
-    await surveyUseCases.deleteSurvey(id)
+    await axios.delete(`${API_URL}/surveys/${id}`)
     await get().refreshSurveys()
   },
   
-  publishSurvey: surveyUseCases.publishSurvey,
+  publishSurvey: async (id) => {
+    const response = await axios.put(`${API_URL}/surveys/${id}/publish`)
+    await get().refreshSurveys()
+    return response.data
+  },
   
-  unpublishSurvey: surveyUseCases.unpublishSurvey,
+  addQuestion: async (surveyId, question) => {
+    const response = await axios.post(`${API_URL}/surveys/${surveyId}/questions`, question)
+    return response.data
+  },
   
-  addQuestion: surveyUseCases.addQuestion,
+  updateQuestion: async (surveyId, questionId, question) => {
+    const response = await axios.put(`${API_URL}/surveys/${surveyId}/questions/${questionId}`, question)
+    return response.data
+  },
   
-  updateQuestion: surveyUseCases.updateQuestion,
-  
-  deleteQuestion: surveyUseCases.deleteQuestion,
-  
-  submitResponse: surveyUseCases.submitResponse,
-  
-  getResponses: surveyUseCases.getResponses,
-  
-  getSurveyStats: surveyUseCases.getSurveyStats,
+  deleteQuestion: async (surveyId, questionId) => {
+    const response = await axios.delete(`${API_URL}/surveys/${surveyId}/questions/${questionId}`)
+    return response.data
+  },
 }))

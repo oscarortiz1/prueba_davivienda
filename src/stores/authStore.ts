@@ -1,16 +1,28 @@
 import { create } from 'zustand'
 import { User } from '../domain/User'
-import { makeAuthUseCases } from '../usecases/authUseCases'
-import { MockAuthService } from '../infrastructure/MockAuthService'
+import axios from 'axios'
 
-const authService = new MockAuthService()
-const authUseCases = makeAuthUseCases(authService)
+const API_URL = 'http://localhost:8080/api'
+
+
+axios.defaults.baseURL = API_URL
+
+
+axios.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
 
 interface AuthState {
   user: User | null
   loading: boolean
+  token: string | null
   setUser: (user: User | null) => void
   setLoading: (loading: boolean) => void
+  setToken: (token: string | null) => void
   login: (email: string, password: string) => Promise<void>
   register: (data: { name: string; email: string; password: string }) => Promise<void>
   logout: () => Promise<void>
@@ -20,31 +32,68 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   loading: true,
+  token: localStorage.getItem('token'),
 
   setUser: (user) => set({ user }),
   
   setLoading: (loading) => set({ loading }),
+  
+  setToken: (token) => {
+    if (token) {
+      localStorage.setItem('token', token)
+    } else {
+      localStorage.removeItem('token')
+    }
+    set({ token })
+  },
 
   login: async (email, password) => {
-    const user = await authUseCases.login(email, password)
-    set({ user })
+    try {
+      const response = await axios.post('/auth/login', { email, password })
+      const { token, userId, name, email: userEmail } = response.data
+      
+      const user: User = { id: userId, name, email: userEmail }
+      
+      set({ user, token })
+      localStorage.setItem('token', token)
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Login failed')
+    }
   },
 
   register: async (data) => {
-    const user = await authUseCases.register(data)
-    set({ user })
+    try {
+      const response = await axios.post('/auth/register', data)
+      const { token, userId, name, email } = response.data
+      
+      const user: User = { id: userId, name, email }
+      
+      set({ user, token })
+      localStorage.setItem('token', token)
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Registration failed')
+    }
   },
 
   logout: async () => {
-    await authUseCases.logout()
-    set({ user: null })
+    set({ user: null, token: null })
+    localStorage.removeItem('token')
   },
 
   initAuth: async () => {
     set({ loading: true })
     try {
-      const user = await authUseCases.current()
-      set({ user })
+      const token = localStorage.getItem('token')
+      if (!token) {
+        set({ loading: false })
+        return
+      }
+      
+      const response = await axios.get('/auth/me')
+      set({ user: response.data })
+    } catch (error) {
+      localStorage.removeItem('token')
+      set({ user: null, token: null })
     } finally {
       set({ loading: false })
     }

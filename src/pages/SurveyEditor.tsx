@@ -61,16 +61,13 @@ export default function SurveyEditor() {
       if (id === 'new') {
         const survey = await createSurvey({
           title,
-          description,
-          createdBy: user.id,
-          isPublished: false,
-          questions: []
+          description
         })
- 
+      
         for (const q of questions) {
           await addQuestion(survey.id, {
             title: q.title,
-            type: q.type,
+            type: q.type.toUpperCase().replace(/-/g, '_'),
             options: q.options,
             required: q.required,
             order: q.order

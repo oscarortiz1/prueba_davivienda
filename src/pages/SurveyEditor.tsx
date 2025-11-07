@@ -433,6 +433,7 @@ function QuestionCard({
   ]
 
   const needsOptions = question.type === 'multiple-choice' || question.type === 'checkbox' || question.type === 'dropdown'
+  const isScale = question.type === 'scale'
 
   const handleAddOption = () => {
     const options = question.options || []
@@ -448,6 +449,16 @@ function QuestionCard({
   const handleDeleteOption = (optIndex: number) => {
     const options = (question.options || []).filter((_, i) => i !== optIndex)
     onUpdate(index, 'options', options)
+  }
+
+  const handleScaleChange = (scaleType: string) => {
+    if (scaleType === '1-5') {
+      onUpdate(index, 'options', ['1', '2', '3', '4', '5'])
+    } else if (scaleType === '1-10') {
+      onUpdate(index, 'options', ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'])
+    } else if (scaleType === '0-5') {
+      onUpdate(index, 'options', ['0', '1', '2', '3', '4', '5'])
+    }
   }
 
   return (
@@ -502,6 +513,59 @@ function QuestionCard({
             </svg>
             Agregar opción
           </button>
+        </div>
+      )}
+
+      {isScale && (
+        <div className="mb-4">
+          <label className="mb-2 block text-sm font-medium text-gray-700">
+            Selecciona el rango de la escala:
+          </label>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => handleScaleChange('1-5')}
+              className={`flex-1 rounded-md border px-3 py-2 text-sm transition ${
+                question.options?.length === 5 && question.options[0] === '1' && question.options[4] === '5'
+                  ? 'border-red-600 bg-red-50 text-red-700'
+                  : 'border-gray-300 bg-white text-gray-700 hover:border-red-600'
+              }`}
+            >
+              1 - 5
+            </button>
+            <button
+              type="button"
+              onClick={() => handleScaleChange('0-5')}
+              className={`flex-1 rounded-md border px-3 py-2 text-sm transition ${
+                question.options?.length === 6 && question.options[0] === '0' && question.options[5] === '5'
+                  ? 'border-red-600 bg-red-50 text-red-700'
+                  : 'border-gray-300 bg-white text-gray-700 hover:border-red-600'
+              }`}
+            >
+              0 - 5
+            </button>
+            <button
+              type="button"
+              onClick={() => handleScaleChange('1-10')}
+              className={`flex-1 rounded-md border px-3 py-2 text-sm transition ${
+                question.options?.length === 10 && question.options[0] === '1' && question.options[9] === '10'
+                  ? 'border-red-600 bg-red-50 text-red-700'
+                  : 'border-gray-300 bg-white text-gray-700 hover:border-red-600'
+              }`}
+            >
+              1 - 10
+            </button>
+          </div>
+          {question.options && question.options.length > 0 && (
+            <div className="mt-3 flex items-center justify-center gap-2">
+              <span className="text-sm text-gray-500">Vista previa:</span>
+              {question.options.map((opt, i) => (
+                <span key={i} className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 bg-gray-50 text-xs font-medium text-gray-700">
+                  {opt}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

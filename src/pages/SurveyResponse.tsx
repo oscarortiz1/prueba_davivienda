@@ -305,21 +305,29 @@ function QuestionResponse({
       )}
 
       {question.type === 'scale' && (
-        <div className="space-y-2">
-          {question.options?.map((option, i) => (
-            <label key={i} className="flex items-center gap-3 rounded-lg border border-gray-200 p-3 hover:bg-gray-50 cursor-pointer">
-              <input
-                type="radio"
-                name={`question-${question.id}`}
-                value={option}
-                checked={value === option}
-                onChange={(e) => onChange(e.target.value)}
-                required={question.required}
-                className="h-4 w-4 border-gray-300 text-red-600 focus:ring-red-600"
-              />
-              <span className="text-gray-700">{option}</span>
-            </label>
-          ))}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between text-sm text-gray-500">
+            <span>Menor</span>
+            <span>Mayor</span>
+          </div>
+          <div className="flex gap-2 justify-center">
+            {question.options?.map((option, i) => (
+              <label key={i} className="flex flex-col items-center gap-2 cursor-pointer group">
+                <input
+                  type="radio"
+                  name={`question-${question.id}`}
+                  value={option}
+                  checked={value === option}
+                  onChange={(e) => onChange(e.target.value)}
+                  required={question.required}
+                  className="peer sr-only"
+                />
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-gray-300 bg-white text-sm font-semibold text-gray-700 transition peer-checked:border-red-600 peer-checked:bg-red-600 peer-checked:text-white group-hover:border-red-400">
+                  {option}
+                </div>
+              </label>
+            ))}
+          </div>
         </div>
       )}
     </div>

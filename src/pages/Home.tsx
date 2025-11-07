@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useSurveyStore } from '../stores/surveyStore'
 import { useUIStore } from '../stores/uiStore'
+import { useToastStore } from '../stores/toastStore'
 import Button from '../ui/components/Button'
 import { useEffect } from 'react'
 
@@ -9,25 +10,37 @@ export default function HomePage() {
   const user = useAuthStore((state) => state.user)
   const logout = useAuthStore((state) => state.logout)
   const surveys = useSurveyStore((state) => state.surveys)
+  const publishedSurveys = useSurveyStore((state) => state.publishedSurveys)
   const loading = useSurveyStore((state) => state.loading)
   const deleteSurvey = useSurveyStore((state) => state.deleteSurvey)
   const refreshSurveys = useSurveyStore((state) => state.refreshSurveys)
+  const refreshPublishedSurveys = useSurveyStore((state) => state.refreshPublishedSurveys)
   const deleteConfirm = useUIStore((state) => state.deleteConfirmId)
   const setDeleteConfirm = useUIStore((state) => state.setDeleteConfirmId)
+  const showToast = useToastStore((state) => state.showToast)
   const navigate = useNavigate()
 
   useEffect(() => {
     refreshSurveys()
-  }, [refreshSurveys])
+    refreshPublishedSurveys()
+    
+    const interval = setInterval(() => {
+      refreshPublishedSurveys()
+    }, 5000)
+    
+    return () => clearInterval(interval)
+  }, [refreshSurveys, refreshPublishedSurveys])
 
   const mySurveys = surveys.filter(s => s.createdBy === user?.id)
+  const otherPublishedSurveys = publishedSurveys.filter(s => s.createdBy !== user?.id)
 
   const handleDelete = async (id: string) => {
     try {
       await deleteSurvey(id)
       setDeleteConfirm(null)
-    } catch (error) {
-      console.error(error)
+      showToast('Encuesta eliminada exitosamente', 'success')
+    } catch (error: any) {
+      showToast('Error al eliminar: ' + (error.response?.data?.message || error.message), 'error')
     }
   }
 
@@ -183,6 +196,62 @@ export default function HomePage() {
                 )}
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Encuestas Publicadas por Otros Usuarios */}
+        {otherPublishedSurveys.length > 0 && (
+          <div className="mt-16">
+            <div className="mb-6 rounded-2xl border border-white/60 bg-white/80 p-6 shadow-lg backdrop-blur-sm">
+              <h2 className="text-2xl font-bold text-gray-900">Encuestas Publicadas</h2>
+              <p className="mt-2 text-sm text-gray-600">Explora y responde encuestas creadas por otros usuarios</p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {otherPublishedSurveys.map(survey => (
+                <div
+                  key={survey.id}
+                  className="group relative rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-all hover:shadow-md"
+                >
+                  <div className="mb-4">
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800">
+                        ● Publicada
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        <svg className="inline h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      </span>
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">{survey.title}</h3>
+                    <p className="mt-1 text-sm text-gray-600 line-clamp-2">{survey.description}</p>
+                  </div>
+
+                  <div className="mb-4 flex items-center gap-4 text-xs text-gray-500">
+                    <span className="flex items-center gap-1">
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      {survey.questions.length} preguntas
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      {new Date(survey.updatedAt).toLocaleDateString()}
+                    </span>
+                  </div>
+
+                  <Button
+                    onClick={() => navigate(`/survey/${survey.id}/respond`)}
+                    className="w-full justify-center text-sm"
+                  >
+                    Responder encuesta
+                  </Button>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

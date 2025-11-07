@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useSurveyStore } from '../stores/surveyStore'
 import { useEditorStore } from '../stores/editorStore'
+import { useToastStore } from '../stores/toastStore'
 import { QuestionType, Question } from '../domain/Survey'
 import Button from '../ui/components/Button'
 
@@ -15,6 +16,7 @@ export default function SurveyEditor() {
   const updateSurvey = useSurveyStore((state) => state.updateSurvey)
   const addQuestion = useSurveyStore((state) => state.addQuestion)
   const publishSurvey = useSurveyStore((state) => state.publishSurvey)
+  const showToast = useToastStore((state) => state.showToast)
   
   const title = useEditorStore((state) => state.title)
   const description = useEditorStore((state) => state.description)
@@ -56,6 +58,18 @@ export default function SurveyEditor() {
 
   const handleSave = async () => {
     if (!user) return
+    
+    if (questions.length === 0) {
+      showToast('Debes agregar al menos una pregunta antes de guardar la encuesta', 'warning')
+      return
+    }
+    
+    const emptyQuestions = questions.filter(q => !q.title.trim())
+    if (emptyQuestions.length > 0) {
+      showToast('Todas las preguntas deben tener un título', 'warning')
+      return
+    }
+    
     setSaving(true)
     try {
       if (id === 'new') {
@@ -73,13 +87,16 @@ export default function SurveyEditor() {
             order: q.order
           })
         }
-        navigate('/')
+        
+        showToast('Encuesta guardada exitosamente. Puedes seguir editándola.', 'success')
+        
+        navigate(`/survey/${survey.id}/edit`, { replace: true })
       } else {
         await updateSurvey(id!, { title, description })
-        navigate('/')
+        showToast('Encuesta actualizada exitosamente', 'success')
       }
     } catch (error: any) {
-      alert(error.message)
+      showToast('Error al guardar: ' + (error.response?.data?.message || error.message), 'error')
     } finally {
       setSaving(false)
     }
@@ -87,15 +104,27 @@ export default function SurveyEditor() {
 
   const handlePublish = async () => {
     if (!id || id === 'new') {
-      alert('Debes guardar la encuesta primero')
+      showToast('Debes guardar la encuesta primero', 'warning')
       return
     }
+    
+    if (questions.length === 0) {
+      showToast('Debes agregar al menos una pregunta antes de publicar la encuesta', 'warning')
+      return
+    }
+    
+    const emptyQuestions = questions.filter(q => !q.title.trim())
+    if (emptyQuestions.length > 0) {
+      showToast('Todas las preguntas deben tener un título antes de publicar', 'warning')
+      return
+    }
+    
     try {
       await publishSurvey(id)
-      alert('Encuesta publicada exitosamente')
+      showToast('Encuesta publicada exitosamente. Ahora otros usuarios podrán verla en el home.', 'success')
       navigate('/')
     } catch (error: any) {
-      alert(error.message)
+      showToast('Error al publicar: ' + (error.response?.data?.message || error.message), 'error')
     }
   }
 
@@ -122,11 +151,18 @@ export default function SurveyEditor() {
               Volver
             </button>
             <div className="flex gap-2">
-              <Button variant="ghost" onClick={handleSave} disabled={saving || !title.trim()}>
+              <Button 
+                variant="ghost" 
+                onClick={handleSave} 
+                disabled={saving || !title.trim() || questions.length === 0}
+              >
                 {saving ? 'Guardando...' : 'Guardar'}
               </Button>
               {id !== 'new' && (
-                <Button onClick={handlePublish} disabled={!title.trim() || questions.length === 0}>
+                <Button 
+                  onClick={handlePublish} 
+                  disabled={!title.trim() || questions.length === 0}
+                >
                   Publicar
                 </Button>
               )}
@@ -156,6 +192,17 @@ export default function SurveyEditor() {
 
         {/* Questions */}
         <div className="space-y-4">
+          {questions.length === 0 && (
+            <div className="rounded-xl border-2 border-dashed border-yellow-300 bg-yellow-50 p-6 text-center">
+              <svg className="mx-auto h-12 w-12 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <p className="mt-3 text-sm font-medium text-yellow-800">
+                ⚠️ Debes agregar al menos una pregunta para poder guardar o publicar la encuesta
+              </p>
+            </div>
+          )}
+          
           {questions.map((q, index) => (
             <QuestionCard
               key={q.id}

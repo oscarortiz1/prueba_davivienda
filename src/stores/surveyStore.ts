@@ -6,10 +6,13 @@ const API_URL = 'http://localhost:8080/api'
 
 interface SurveyState {
   surveys: Survey[]
+  publishedSurveys: Survey[]
   loading: boolean
   setSurveys: (surveys: Survey[]) => void
+  setPublishedSurveys: (surveys: Survey[]) => void
   setLoading: (loading: boolean) => void
   refreshSurveys: () => Promise<void>
+  refreshPublishedSurveys: () => Promise<void>
   createSurvey: (data: { title: string; description: string }) => Promise<Survey>
   getSurvey: (id: string) => Promise<Survey>
   updateSurvey: (id: string, data: { title: string; description: string }) => Promise<Survey>
@@ -22,9 +25,12 @@ interface SurveyState {
 
 export const useSurveyStore = create<SurveyState>((set, get) => ({
   surveys: [],
+  publishedSurveys: [],
   loading: false,
 
   setSurveys: (surveys) => set({ surveys }),
+  
+  setPublishedSurveys: (publishedSurveys) => set({ publishedSurveys }),
   
   setLoading: (loading) => set({ loading }),
 
@@ -37,6 +43,15 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
       console.error('Error fetching surveys:', error)
     } finally {
       set({ loading: false })
+    }
+  },
+
+  refreshPublishedSurveys: async () => {
+    try {
+      const response = await axios.get(`${API_URL}/surveys/published`)
+      set({ publishedSurveys: response.data })
+    } catch (error) {
+      console.error('Error fetching published surveys:', error)
     }
   },
 

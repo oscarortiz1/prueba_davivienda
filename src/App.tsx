@@ -1,10 +1,12 @@
 import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './stores/authStore'
+import { useToastStore } from './stores/toastStore'
 import LoginPage from './pages/Login.tsx'
 import RegisterPage from './pages/Register.tsx'
 import HomePage from './pages/Home.tsx'
 import SurveyEditor from './pages/SurveyEditor.tsx'
+import Toast from './ui/components/Toast'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((state) => state.user)
@@ -22,6 +24,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  const toasts = useToastStore((state) => state.toasts)
+  const removeToast = useToastStore((state) => state.removeToast)
+  
   return (
     <div className="min-h-screen">
       <Routes>
@@ -31,6 +36,18 @@ export default function App() {
         <Route path="/survey/:id/edit" element={<ProtectedRoute><SurveyEditor /></ProtectedRoute>} />
         <Route path="/survey/new" element={<ProtectedRoute><SurveyEditor /></ProtectedRoute>} />
       </Routes>
+      
+      {/* Toast Container */}
+      <div className="fixed top-4 right-4 z-50 flex flex-col gap-2">
+        {toasts.map((toast) => (
+          <Toast
+            key={toast.id}
+            message={toast.message}
+            type={toast.type}
+            onClose={() => removeToast(toast.id)}
+          />
+        ))}
+      </div>
     </div>
   )
 }

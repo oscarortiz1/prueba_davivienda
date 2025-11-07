@@ -65,14 +65,22 @@ export default function SurveyResponse() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!user && !respondentEmail.trim()) {
-      showToast('Debes proporcionar un correo electrónico para responder la encuesta', 'warning')
-      return
-    }
+    if (!user) {
+      if (!respondentEmail.trim()) {
+        showToast('Por favor ingresa tu correo electrónico', 'warning')
+        return
+      }
 
-    if (!respondentEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-      showToast('Debes proporcionar un correo electrónico válido', 'warning')
-      return
+      if (!respondentEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+        showToast('Por favor ingresa un correo electrónico válido', 'warning')
+        return
+      }
+
+      const alreadyResponded = await checkIfResponded(surveyId, respondentEmail)
+      if (alreadyResponded) {
+        showToast('Ya has respondido esta encuesta con este correo electrónico', 'warning')
+        return
+      }
     }
 
     const requiredQuestions = survey.questions.filter((q: Question) => q.required)
@@ -119,7 +127,7 @@ export default function SurveyResponse() {
     )
   }
 
-  if (hasResponded) {
+  if (hasResponded && user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-orange-50">
         <header className="border-b border-gray-200 bg-white/80 backdrop-blur-sm">
@@ -184,15 +192,19 @@ export default function SurveyResponse() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {!user && (
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                Correo electrónico <span className="text-red-600">*</span>
-              </label>
+              <div className="mb-4">
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Información del participante
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Para responder esta encuesta, necesitamos tu correo electrónico
+                </p>
+              </div>
               <Input
                 type="email"
-                placeholder="tu@email.com"
+                placeholder="Correo electrónico"
                 value={respondentEmail}
                 onChange={(e) => setRespondentEmail(e.target.value)}
-                required
               />
             </div>
           )}

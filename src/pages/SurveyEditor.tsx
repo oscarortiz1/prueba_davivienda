@@ -63,6 +63,63 @@ export default function SurveyEditor() {
     }
   }
 
+  const validateQuestions = () => {
+    const emptyQuestions = questions.filter(q => !q.title.trim())
+    if (emptyQuestions.length > 0) {
+      showToast('Todas las preguntas deben tener un título', 'warning')
+      return false
+    }
+
+    for (let i = 0; i < questions.length; i++) {
+      const q = questions[i]
+      const questionNumber = i + 1
+
+      if (q.type === 'multiple-choice' || q.type === 'checkbox' || q.type === 'dropdown') {
+        if (!q.options || q.options.length === 0) {
+          showToast(`La pregunta ${questionNumber} de tipo "${getQuestionTypeLabel(q.type)}" debe tener al menos una opción`, 'warning')
+          return false
+        }
+
+        if (q.options.length < 2) {
+          showToast(`La pregunta ${questionNumber} de tipo "${getQuestionTypeLabel(q.type)}" debe tener al menos 2 opciones`, 'warning')
+          return false
+        }
+
+        const emptyOptions = q.options.filter(opt => !opt.trim())
+        if (emptyOptions.length > 0) {
+          showToast(`La pregunta ${questionNumber} tiene opciones vacías. Completa o elimina las opciones vacías.`, 'warning')
+          return false
+        }
+
+        const uniqueOptions = new Set(q.options.map(opt => opt.trim().toLowerCase()))
+        if (uniqueOptions.size !== q.options.length) {
+          showToast(`La pregunta ${questionNumber} tiene opciones duplicadas. Cada opción debe ser única.`, 'warning')
+          return false
+        }
+      }
+
+      if (q.type === 'scale') {
+        if (!q.options || q.options.length < 2) {
+          showToast(`La pregunta ${questionNumber} de tipo "Escala lineal" debe tener al menos 2 niveles`, 'warning')
+          return false
+        }
+      }
+    }
+
+    return true
+  }
+
+  const getQuestionTypeLabel = (type: string) => {
+    const types: { [key: string]: string } = {
+      'multiple-choice': 'Opción múltiple',
+      'checkbox': 'Casillas de verificación',
+      'dropdown': 'Desplegable',
+      'text': 'Respuesta corta',
+      'scale': 'Escala lineal'
+    }
+    return types[type] || type
+  }
+
   const handleSave = async () => {
     if (!user) return
     
@@ -71,9 +128,7 @@ export default function SurveyEditor() {
       return
     }
     
-    const emptyQuestions = questions.filter(q => !q.title.trim())
-    if (emptyQuestions.length > 0) {
-      showToast('Todas las preguntas deben tener un título', 'warning')
+    if (!validateQuestions()) {
       return
     }
     
@@ -125,9 +180,7 @@ export default function SurveyEditor() {
       return
     }
     
-    const emptyQuestions = questions.filter(q => !q.title.trim())
-    if (emptyQuestions.length > 0) {
-      showToast('Todas las preguntas deben tener un título antes de publicar', 'warning')
+    if (!validateQuestions()) {
       return
     }
     

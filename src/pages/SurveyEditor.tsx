@@ -24,11 +24,15 @@ export default function SurveyEditor() {
   const questions = useEditorStore((state) => state.questions)
   const loading = useEditorStore((state) => state.loading)
   const saving = useEditorStore((state) => state.saving)
+  const publishing = useEditorStore((state) => state.publishing)
+  const currentSurveyId = useEditorStore((state) => state.currentSurveyId)
   const setTitle = useEditorStore((state) => state.setTitle)
   const setDescription = useEditorStore((state) => state.setDescription)
   const setQuestions = useEditorStore((state) => state.setQuestions)
   const setLoading = useEditorStore((state) => state.setLoading)
   const setSaving = useEditorStore((state) => state.setSaving)
+  const setPublishing = useEditorStore((state) => state.setPublishing)
+  const setCurrentSurveyId = useEditorStore((state) => state.setCurrentSurveyId)
   const handleAddQuestion = useEditorStore((state) => state.addQuestion)
   const handleUpdateQuestion = useEditorStore((state) => state.updateQuestion)
   const handleDeleteQuestion = useEditorStore((state) => state.deleteQuestion)
@@ -36,8 +40,10 @@ export default function SurveyEditor() {
 
   useEffect(() => {
     if (id && id !== 'new') {
+      setCurrentSurveyId(id)
       loadSurvey()
     } else {
+      setCurrentSurveyId(null)
       reset()
     }
   }, [id])
@@ -74,7 +80,7 @@ export default function SurveyEditor() {
     setSaving(true)
     
     try {
-      if (id === 'new') {
+      if (id === 'new' && !currentSurveyId) {
         const survey = await createSurvey({
           title,
           description
@@ -90,13 +96,13 @@ export default function SurveyEditor() {
           })
         }
         
-        showToast('Encuesta guardada exitosamente. Puedes seguir editándola.', 'success')
+        setCurrentSurveyId(survey.id)
+        showToast('Encuesta guardada exitosamente. Ahora puedes publicarla.', 'success')
         
-        setTimeout(() => {
-          navigate(`/survey/${survey.id}/edit`, { replace: true })
-        }, 1000)
-      } else if (id && id !== 'new') {
-        await updateSurvey(id, { title, description })
+        window.history.replaceState(null, '', `/survey/${survey.id}/edit`)
+      } else if ((id && id !== 'new') || currentSurveyId) {
+        const surveyId = currentSurveyId || id
+        await updateSurvey(surveyId, { title, description })
         showToast('Encuesta actualizada exitosamente', 'success')
       }
     } catch (error: any) {
@@ -107,7 +113,9 @@ export default function SurveyEditor() {
   }
 
   const handlePublish = async () => {
-    if (!id || id === 'new') {
+    const surveyId = currentSurveyId || (id !== 'new' ? id : null)
+    
+    if (!surveyId) {
       showToast('Debes guardar la encuesta primero', 'warning')
       return
     }
@@ -123,12 +131,16 @@ export default function SurveyEditor() {
       return
     }
     
+    setPublishing(true)
+    
     try {
-      await publishSurvey(id)
+      await publishSurvey(surveyId)
       showToast('Encuesta publicada exitosamente. Ahora otros usuarios podrán verla en el home.', 'success')
       navigate('/')
     } catch (error: any) {
       showToast('Error al publicar: ' + (error.response?.data?.message || error.message), 'error')
+    } finally {
+      setPublishing(false)
     }
   }
 
@@ -162,12 +174,12 @@ export default function SurveyEditor() {
               >
                 {saving ? 'Guardando...' : 'Guardar'}
               </Button>
-              {id && id !== 'new' && (
+              {currentSurveyId && (
                 <Button 
                   onClick={handlePublish} 
-                  disabled={!id || !title.trim() || questions.length === 0}
+                  disabled={publishing || !title.trim() || questions.length === 0}
                 >
-                  Publicar
+                  {publishing ? 'Publicando...' : 'Publicar'}
                 </Button>
               )}
             </div>

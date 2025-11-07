@@ -1,15 +1,17 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import Card from '../ui/components/Card'
 import AuthForm from '../ui/components/AuthForm'
 import Logo from '../ui/components/Logo'
 import { useAuthStore } from '../stores/authStore'
+import { useUIStore } from '../stores/uiStore'
 
 export default function LoginPage() {
   const login = useAuthStore((state) => state.login)
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false)
+  const showSuccessMessage = useUIStore((state) => state.showLoginSuccessMessage)
+  const setShowSuccessMessage = useUIStore((state) => state.setShowLoginSuccessMessage)
 
   useEffect(() => {
     if (searchParams.get('registered') === 'true') {
@@ -17,7 +19,7 @@ export default function LoginPage() {
       setSearchParams({})
       setTimeout(() => setShowSuccessMessage(false), 5000)
     }
-  }, [searchParams, setSearchParams])
+  }, [searchParams, setSearchParams, setShowSuccessMessage])
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-red-100 via-white to-orange-100 flex items-center justify-center px-4 py-16">

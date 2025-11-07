@@ -7,11 +7,15 @@ interface EditorState {
   questions: Question[]
   loading: boolean
   saving: boolean
+  publishing: boolean
+  currentSurveyId: string | null
   setTitle: (title: string) => void
   setDescription: (description: string) => void
   setQuestions: (questions: Question[]) => void
   setLoading: (loading: boolean) => void
   setSaving: (saving: boolean) => void
+  setPublishing: (publishing: boolean) => void
+  setCurrentSurveyId: (id: string | null) => void
   addQuestion: () => void
   updateQuestion: (index: number, field: keyof Question, value: any) => void
   deleteQuestion: (index: number) => void
@@ -24,6 +28,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   questions: [],
   loading: false,
   saving: false,
+  publishing: false,
+  currentSurveyId: null,
 
   setTitle: (title) => set({ title }),
   
@@ -34,6 +40,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setLoading: (loading) => set({ loading }),
   
   setSaving: (saving) => set({ saving }),
+
+  setPublishing: (publishing) => set({ publishing }),
+
+  setCurrentSurveyId: (id) => set({ currentSurveyId: id }),
 
   addQuestion: () => {
     const questions = get().questions
@@ -59,5 +69,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({ questions })
   },
 
-  reset: () => set({ title: '', description: '', questions: [], loading: false, saving: false }),
+  reset: () => set({ 
+    title: '', 
+    description: '', 
+    questions: [], 
+    loading: false, 
+    saving: false,
+    publishing: false,
+    currentSurveyId: null
+  }),
 }))

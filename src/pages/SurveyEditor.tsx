@@ -29,6 +29,7 @@ export default function SurveyEditor() {
   const publishing = useEditorStore((state) => state.publishing)
   const currentSurveyId = useEditorStore((state) => state.currentSurveyId)
   const hasUnsavedChanges = useEditorStore((state) => state.hasUnsavedChanges)
+  const isPublished = useEditorStore((state) => state.isPublished)
   const setTitle = useEditorStore((state) => state.setTitle)
   const setDescription = useEditorStore((state) => state.setDescription)
   const setQuestions = useEditorStore((state) => state.setQuestions)
@@ -37,6 +38,7 @@ export default function SurveyEditor() {
   const setPublishing = useEditorStore((state) => state.setPublishing)
   const setCurrentSurveyId = useEditorStore((state) => state.setCurrentSurveyId)
   const setHasUnsavedChanges = useEditorStore((state) => state.setHasUnsavedChanges)
+  const setIsPublished = useEditorStore((state) => state.setIsPublished)
   const handleAddQuestion = useEditorStore((state) => state.addQuestion)
   const handleUpdateQuestion = useEditorStore((state) => state.updateQuestion)
   const handleDeleteQuestion = useEditorStore((state) => state.deleteQuestion)
@@ -58,8 +60,15 @@ export default function SurveyEditor() {
     try {
       const survey = await getSurvey(id)
       if (survey) {
+        if (survey.createdBy !== user?.id) {
+          showToast('No tienes permisos para editar esta encuesta', 'error')
+          navigate('/')
+          return
+        }
+        
         setTitle(survey.title)
         setDescription(survey.description)
+        setIsPublished(survey.isPublished)
         
         const normalizedQuestions = survey.questions.map(q => ({
           ...q,
@@ -68,6 +77,9 @@ export default function SurveyEditor() {
         
         setQuestions(normalizedQuestions)
       }
+    } catch (error: any) {
+      showToast('Error al cargar la encuesta: ' + (error.response?.data?.message || error.message), 'error')
+      navigate('/')
     } finally {
       setLoading(false)
     }
@@ -128,6 +140,12 @@ export default function SurveyEditor() {
       'scale': 'Escala lineal'
     }
     return types[type] || type
+  }
+
+  const handleCopyLink = () => {
+    const link = `${window.location.origin}/survey/${currentSurveyId}/respond`
+    navigator.clipboard.writeText(link)
+    showToast('Enlace copiado al portapapeles', 'success')
   }
 
   const handleSave = async () => {
@@ -290,7 +308,36 @@ export default function SurveyEditor() {
       </header>
 
       <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
-        {/* Survey Info */}
+        {isPublished && currentSurveyId && (
+          <div className="mb-6 rounded-xl border border-green-200 bg-green-50 p-4 shadow-sm">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <svg className="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <h3 className="font-semibold text-green-900">Encuesta publicada</h3>
+                </div>
+                <p className="text-sm text-green-700 mb-3">Comparte este enlace para que otros usuarios puedan responder tu encuesta:</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={`${window.location.origin}/survey/${currentSurveyId}/respond`}
+                    className="flex-1 rounded-md border border-green-300 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none"
+                  />
+                  <Button onClick={handleCopyLink} className="whitespace-nowrap">
+                    <svg className="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    Copiar
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="mb-8 rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
           <input
             type="text"

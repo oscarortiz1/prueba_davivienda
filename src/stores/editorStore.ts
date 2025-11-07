@@ -10,6 +10,7 @@ interface EditorState {
   publishing: boolean
   currentSurveyId: string | null
   hasUnsavedChanges: boolean
+  isPublished: boolean
   setTitle: (title: string) => void
   setDescription: (description: string) => void
   setQuestions: (questions: Question[]) => void
@@ -18,6 +19,7 @@ interface EditorState {
   setPublishing: (publishing: boolean) => void
   setCurrentSurveyId: (id: string | null) => void
   setHasUnsavedChanges: (hasChanges: boolean) => void
+  setIsPublished: (isPublished: boolean) => void
   addQuestion: () => void
   updateQuestion: (index: number, field: keyof Question, value: any) => void
   deleteQuestion: (index: number) => void
@@ -33,6 +35,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   publishing: false,
   currentSurveyId: null,
   hasUnsavedChanges: false,
+  isPublished: false,
 
   setTitle: (title) => set({ title, hasUnsavedChanges: true }),
   
@@ -49,6 +52,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setCurrentSurveyId: (id) => set({ currentSurveyId: id }),
 
   setHasUnsavedChanges: (hasChanges) => set({ hasUnsavedChanges: hasChanges }),
+
+  setIsPublished: (isPublished) => set({ isPublished }),
 
   addQuestion: () => {
     const questions = get().questions
@@ -82,6 +87,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     saving: false,
     publishing: false,
     currentSurveyId: null,
-    hasUnsavedChanges: false
+    hasUnsavedChanges: false,
+    isPublished: false
   }),
 }))

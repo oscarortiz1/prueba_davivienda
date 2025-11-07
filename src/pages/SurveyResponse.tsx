@@ -70,7 +70,17 @@ export default function SurveyResponse() {
         setSurvey({ ...data, questions: normalizedQuestions })
       }
     } catch (error: any) {
-      showToast('Error al cargar la encuesta: ' + (error.response?.data?.message || error.message), 'error')
+      const status = error.response?.status
+      const message = error.response?.data?.message || error.message
+      
+      if (status === 404) {
+        showToast('Esta encuesta no existe o ha sido eliminada', 'error')
+      } else if (message?.includes('not published')) {
+        showToast('Esta encuesta no está disponible públicamente', 'warning')
+      } else {
+        showToast('Error al cargar la encuesta: ' + message, 'error')
+      }
+      
       navigate('/')
     } finally {
       setLoading(false)
@@ -87,7 +97,17 @@ export default function SurveyResponse() {
         }))
         setSurvey({ ...data, questions: normalizedQuestions })
       }
-    } catch (error) {
+    } catch (error: any) {
+      const status = error.response?.status
+      const message = error.response?.data?.message || error.message
+      
+      if (status === 404) {
+        showToast('Esta encuesta ha sido eliminada', 'error')
+        navigate('/')
+      } else if (message?.includes('not published')) {
+        showToast('Esta encuesta ya no está disponible públicamente', 'warning')
+        navigate('/')
+      }
       console.log('Error en actualización automática:', error)
     }
   }

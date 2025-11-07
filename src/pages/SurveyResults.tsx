@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useResultsStore } from '../stores/resultsStore'
@@ -18,15 +18,35 @@ export default function SurveyResults() {
   const loading = useResultsStore((state) => state.loading)
   const error = useResultsStore((state) => state.error)
   const loadResults = useResultsStore((state) => state.loadResults)
+  const refreshResults = useResultsStore((state) => state.refreshResults)
   const reset = useResultsStore((state) => state.reset)
   const showToast = useToastStore((state) => state.showToast)
+  const pollingIntervalRef = useRef<number | null>(null)
 
+  // Initial load
   useEffect(() => {
     if (id) {
       loadResults(id)
     }
     return () => reset()
   }, [id, loadResults, reset])
+
+  // Real-time polling - refresh every 5 seconds
+  useEffect(() => {
+    if (id && survey) {
+      // Start polling
+      pollingIntervalRef.current = window.setInterval(() => {
+        refreshResults(id)
+      }, 5000) // 5 seconds
+
+      // Cleanup on unmount
+      return () => {
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current)
+        }
+      }
+    }
+  }, [id, survey, refreshResults])
 
   useEffect(() => {
     if (error) {
@@ -106,16 +126,25 @@ export default function SurveyResults() {
                 </svg>
               </Button>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Resultados de la Encuesta</h1>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-xl font-bold text-gray-900">Resultados de la Encuesta</h1>
+                  {/* Real-time indicator */}
+                  <div className="flex items-center gap-1.5 rounded-full bg-green-100 px-2.5 py-1">
+                    <div className="h-2 w-2 animate-pulse rounded-full bg-green-600"></div>
+                    <span className="text-xs font-medium text-green-700">En vivo</span>
+                  </div>
+                </div>
                 <p className="text-sm text-gray-500">{survey.title}</p>
               </div>
             </div>
-            <Button onClick={handleExport} disabled={totalResponses === 0}>
-              <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              Exportar CSV
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button onClick={handleExport} disabled={totalResponses === 0}>
+                <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Exportar CSV
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -185,6 +214,18 @@ export default function SurveyResults() {
                 </p>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Real-time update info banner */}
+        <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <svg className="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-sm text-blue-800">
+              <span className="font-semibold">Actualizaciones automáticas activas.</span> Los resultados se actualizan cada 5 segundos cuando llegan nuevas respuestas.
+            </p>
           </div>
         </div>
 

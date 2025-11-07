@@ -41,7 +41,7 @@ export default function HomePage() {
       {/* Header */}
       <header className="border-b border-gray-200 bg-white/80 backdrop-blur-sm">
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-600">
                 <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -53,9 +53,9 @@ export default function HomePage() {
                 <p className="text-xs text-gray-500">Plataforma de Encuestas</p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center justify-between gap-2 sm:gap-4">
               <span className="text-sm text-gray-600">Hola, <span className="font-semibold">{user?.name}</span></span>
-              <Button variant="ghost" onClick={handleLogout}>
+              <Button variant="ghost" onClick={handleLogout} className="text-sm">
                 Cerrar sesión
               </Button>
             </div>
@@ -66,13 +66,13 @@ export default function HomePage() {
       {/* Main Content */}
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Hero Section */}
-        <div className="mb-8 rounded-2xl border border-white/60 bg-white/80 p-8 shadow-lg backdrop-blur-sm">
-          <div className="flex items-start justify-between">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900">Mis Encuestas</h2>
-              <p className="mt-2 text-gray-600">Crea, gestiona y analiza tus encuestas en tiempo real</p>
+        <div className="mb-8 rounded-2xl border border-white/60 bg-white/80 p-6 sm:p-8 shadow-lg backdrop-blur-sm">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex-1">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Mis Encuestas</h2>
+              <p className="mt-2 text-sm sm:text-base text-gray-600">Crea, gestiona y analiza tus encuestas en tiempo real</p>
             </div>
-            <Button onClick={() => navigate('/survey/new')}>
+            <Button onClick={() => navigate('/survey/new')} className="w-full sm:w-auto">
               <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
@@ -142,7 +142,7 @@ export default function HomePage() {
                   </span>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row">
                   <Button
                     onClick={() => navigate(`/survey/${survey.id}/edit`)}
                     className="flex-1 justify-center text-sm"

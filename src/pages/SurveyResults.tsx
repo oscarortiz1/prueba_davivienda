@@ -1,0 +1,259 @@
+import { useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { useAuthStore } from '../stores/authStore'
+import { useResultsStore } from '../stores/resultsStore'
+import { useToastStore } from '../stores/toastStore'
+import Button from '../ui/components/Button'
+import BarChartComponent from '../ui/components/charts/BarChartComponent'
+import PieChartComponent from '../ui/components/charts/PieChartComponent'
+import TextResponses from '../ui/components/charts/TextResponses'
+
+export default function SurveyResults() {
+  const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const user = useAuthStore((state) => state.user)
+  const survey = useResultsStore((state) => state.survey)
+  const responses = useResultsStore((state) => state.responses)
+  const results = useResultsStore((state) => state.results)
+  const loading = useResultsStore((state) => state.loading)
+  const error = useResultsStore((state) => state.error)
+  const loadResults = useResultsStore((state) => state.loadResults)
+  const reset = useResultsStore((state) => state.reset)
+  const showToast = useToastStore((state) => state.showToast)
+
+  useEffect(() => {
+    if (id) {
+      loadResults(id)
+    }
+    return () => reset()
+  }, [id, loadResults, reset])
+
+  useEffect(() => {
+    if (error) {
+      showToast(error, 'error')
+    }
+  }, [error, showToast])
+
+  useEffect(() => {
+    if (survey && survey.createdBy !== user?.id) {
+      showToast('No tienes permisos para ver los resultados de esta encuesta', 'error')
+      navigate('/')
+    }
+  }, [survey, user, navigate, showToast])
+
+  const handleBack = () => {
+    navigate('/')
+  }
+
+  const handleExport = () => {
+    if (!survey || !responses) return
+
+    const headers = ['Email', ...survey.questions.map((q: any) => q.title)]
+    const rows = responses.map(response => {
+      const row = [response.respondentEmail]
+      survey.questions.forEach((question: any) => {
+        const answer = response.answers.find(a => a.questionId === question.id)
+        row.push(answer ? answer.value.join(', ') : '')
+      })
+      return row
+    })
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `resultados_${survey.title}_${new Date().toISOString().split('T')[0]}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    
+    showToast('Resultados exportados exitosamente', 'success')
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-red-50 via-white to-orange-50">
+        <div className="text-center">
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-red-600 border-r-transparent"></div>
+          <p className="mt-4 text-gray-600">Cargando resultados...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!survey) {
+    return null
+  }
+
+  const totalResponses = responses.length
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-orange-50">
+      {/* Header */}
+      <header className="border-b border-gray-200 bg-white/80 backdrop-blur-sm">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <Button onClick={handleBack} variant="ghost" className="p-2">
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+              </Button>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">Resultados de la Encuesta</h1>
+                <p className="text-sm text-gray-500">{survey.title}</p>
+              </div>
+            </div>
+            <Button onClick={handleExport} disabled={totalResponses === 0}>
+              <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Exportar CSV
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        {/* Summary Stats */}
+        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-xl border border-white/60 bg-white/80 p-6 backdrop-blur-sm">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-red-100">
+                <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Total Respuestas</p>
+                <p className="text-2xl font-bold text-gray-900">{totalResponses}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-white/60 bg-white/80 p-6 backdrop-blur-sm">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
+                <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Preguntas</p>
+                <p className="text-2xl font-bold text-gray-900">{survey.questions.length}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-white/60 bg-white/80 p-6 backdrop-blur-sm">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-green-100">
+                <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Estado</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {survey.isPublished ? 'Publicada' : 'Borrador'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-white/60 bg-white/80 p-6 backdrop-blur-sm">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-purple-100">
+                <svg className="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Última respuesta</p>
+                <p className="text-sm font-bold text-gray-900">
+                  {totalResponses > 0 
+                    ? new Date(responses[responses.length - 1].submittedAt).toLocaleDateString()
+                    : 'N/A'
+                  }
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* No responses message */}
+        {totalResponses === 0 && (
+          <div className="rounded-2xl border-2 border-dashed border-gray-300 bg-white/60 p-12 text-center">
+            <svg className="mx-auto h-16 w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <h3 className="mt-4 text-lg font-medium text-gray-900">No hay respuestas todavía</h3>
+            <p className="mt-2 text-sm text-gray-600">
+              Comparte tu encuesta para comenzar a recibir respuestas
+            </p>
+          </div>
+        )}
+
+        {/* Results by Question */}
+        {totalResponses > 0 && (
+          <div className="space-y-8">
+            <h2 className="text-2xl font-bold text-gray-900">Resultados por Pregunta</h2>
+            
+            {results.map((result, index) => (
+              <div key={result.questionId}>
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {index + 1}. {result.questionTitle}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    Tipo: {getQuestionTypeLabel(result.questionType)} • {result.totalResponses} respuestas
+                  </p>
+                </div>
+
+                {result.questionType === 'text' ? (
+                  <TextResponses 
+                    responses={result.textResponses || []} 
+                    title="Respuestas"
+                  />
+                ) : result.questionType === 'scale' ? (
+                  <BarChartComponent 
+                    data={result.answers} 
+                    title="Distribución de Respuestas"
+                  />
+                ) : result.answers.length <= 5 ? (
+                  <PieChartComponent 
+                    data={result.answers} 
+                    title="Distribución de Respuestas"
+                  />
+                ) : (
+                  <BarChartComponent 
+                    data={result.answers} 
+                    title="Distribución de Respuestas"
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
+    </div>
+  )
+}
+
+function getQuestionTypeLabel(type: string): string {
+  const types: { [key: string]: string } = {
+    'multiple-choice': 'Opción múltiple',
+    'checkbox': 'Casillas de verificación',
+    'dropdown': 'Desplegable',
+    'text': 'Respuesta corta',
+    'scale': 'Escala lineal'
+  }
+  return types[type] || type
+}

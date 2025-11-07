@@ -7,6 +7,7 @@ import RegisterPage from './pages/Register.tsx'
 import HomePage from './pages/Home.tsx'
 import SurveyEditor from './pages/SurveyEditor.tsx'
 import SurveyResponse from './pages/SurveyResponse.tsx'
+import SurveyResults from './pages/SurveyResults.tsx'
 import Toast from './ui/components/Toast'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -37,6 +38,7 @@ export default function App() {
         <Route path="/survey/new" element={<ProtectedRoute><SurveyEditor /></ProtectedRoute>} />
         <Route path="/survey/:id/edit" element={<ProtectedRoute><SurveyEditor /></ProtectedRoute>} />
         <Route path="/survey/:id/respond" element={<SurveyResponse />} />
+        <Route path="/survey/:id/results" element={<ProtectedRoute><SurveyResults /></ProtectedRoute>} />
       </Routes>
       
       {/* Toast Container */}

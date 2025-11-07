@@ -15,6 +15,7 @@ interface SurveyState {
   refreshPublishedSurveys: () => Promise<void>
   createSurvey: (data: { title: string; description: string }) => Promise<Survey>
   getSurvey: (id: string) => Promise<Survey>
+  getPublicSurvey: (id: string) => Promise<Survey>
   updateSurvey: (id: string, data: { title: string; description: string }) => Promise<Survey>
   deleteSurvey: (id: string) => Promise<void>
   publishSurvey: (id: string) => Promise<Survey>
@@ -63,6 +64,11 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
   
   getSurvey: async (id) => {
     const response = await axios.get(`${API_URL}/surveys/${id}`)
+    return response.data
+  },
+  
+  getPublicSurvey: async (id) => {
+    const response = await axios.get(`${API_URL}/surveys/public/${id}`)
     return response.data
   },
   

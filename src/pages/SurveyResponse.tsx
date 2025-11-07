@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useSurveyStore } from '../stores/surveyStore'
@@ -13,7 +13,7 @@ export default function SurveyResponse() {
   const surveyId = params.id!
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
-  const getSurvey = useSurveyStore((state) => state.getSurvey)
+  const getPublicSurvey = useSurveyStore((state) => state.getPublicSurvey)
   const showToast = useToastStore((state) => state.showToast)
   
   const answers = useResponseStore((state) => state.answers)
@@ -30,11 +30,26 @@ export default function SurveyResponse() {
   const checkIfResponded = useResponseStore((state) => state.checkIfResponded)
   const submitResponse = useResponseStore((state) => state.submitResponse)
   const reset = useResponseStore((state) => state.reset)
+  const pollingIntervalRef = useRef<number | null>(null)
 
   useEffect(() => {
     loadSurvey()
     return () => reset()
   }, [surveyId])
+
+  useEffect(() => {
+    if (survey && !hasResponded) {
+      pollingIntervalRef.current = window.setInterval(() => {
+        loadSurveyQuietly()
+      }, 3000)
+    }
+
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current)
+      }
+    }
+  }, [survey, hasResponded])
 
   useEffect(() => {
     if (user?.email) {
@@ -46,7 +61,7 @@ export default function SurveyResponse() {
   const loadSurvey = async () => {
     setLoading(true)
     try {
-      const data = await getSurvey(surveyId)
+      const data = await getPublicSurvey(surveyId)
       if (data) {
         const normalizedQuestions = data.questions.map((q: any) => ({
           ...q,
@@ -59,6 +74,21 @@ export default function SurveyResponse() {
       navigate('/')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadSurveyQuietly = async () => {
+    try {
+      const data = await getPublicSurvey(surveyId)
+      if (data) {
+        const normalizedQuestions = data.questions.map((q: any) => ({
+          ...q,
+          type: q.type.toLowerCase().replace(/_/g, '-')
+        }))
+        setSurvey({ ...data, questions: normalizedQuestions })
+      }
+    } catch (error) {
+      console.log('Error en actualización automática:', error)
     }
   }
 

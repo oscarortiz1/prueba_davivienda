@@ -20,6 +20,7 @@ interface EditorState {
   setCurrentSurveyId: (id: string | null) => void
   setHasUnsavedChanges: (hasChanges: boolean) => void
   setIsPublished: (isPublished: boolean) => void
+  loadSurveyData: (title: string, description: string, questions: Question[], isPublished: boolean) => void
   addQuestion: () => void
   updateQuestion: (index: number, field: keyof Question, value: any) => void
   deleteQuestion: (index: number) => void
@@ -54,6 +55,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setHasUnsavedChanges: (hasChanges) => set({ hasUnsavedChanges: hasChanges }),
 
   setIsPublished: (isPublished) => set({ isPublished }),
+
+  loadSurveyData: (title, description, questions, isPublished) => set({ 
+    title, 
+    description, 
+    questions, 
+    isPublished,
+    hasUnsavedChanges: false 
+  }),
 
   addQuestion: () => {
     const questions = get().questions

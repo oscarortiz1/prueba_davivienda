@@ -39,6 +39,7 @@ export default function SurveyEditor() {
   const setCurrentSurveyId = useEditorStore((state) => state.setCurrentSurveyId)
   const setHasUnsavedChanges = useEditorStore((state) => state.setHasUnsavedChanges)
   const setIsPublished = useEditorStore((state) => state.setIsPublished)
+  const loadSurveyData = useEditorStore((state) => state.loadSurveyData)
   const handleAddQuestion = useEditorStore((state) => state.addQuestion)
   const handleUpdateQuestion = useEditorStore((state) => state.updateQuestion)
   const handleDeleteQuestion = useEditorStore((state) => state.deleteQuestion)
@@ -66,16 +67,12 @@ export default function SurveyEditor() {
           return
         }
         
-        setTitle(survey.title)
-        setDescription(survey.description)
-        setIsPublished(survey.isPublished)
-        
         const normalizedQuestions = survey.questions.map(q => ({
           ...q,
           type: q.type.toLowerCase().replace(/_/g, '-') as QuestionType
         }))
         
-        setQuestions(normalizedQuestions)
+        loadSurveyData(survey.title, survey.description, normalizedQuestions, survey.isPublished)
       }
     } catch (error: any) {
       showToast('Error al cargar la encuesta: ' + (error.response?.data?.message || error.message), 'error')
@@ -328,7 +325,8 @@ export default function SurveyEditor() {
       </header>
 
       <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
-        {!isPublished && currentSurveyId && (
+        {/* Warning message for unsaved changes or unpublished survey */}
+        {currentSurveyId && (!isPublished || hasUnsavedChanges) && (
           <div className="mb-6 rounded-xl border border-orange-200 bg-orange-50 p-4 shadow-sm">
             <div className="flex items-start gap-3">
               <svg className="h-5 w-5 text-orange-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -347,6 +345,7 @@ export default function SurveyEditor() {
           </div>
         )}
         
+        {/* Green success message with link - Always show if published at least once */}
         {isPublished && currentSurveyId && (
           <div className="mb-6 rounded-xl border border-green-200 bg-green-50 p-4 shadow-sm">
             <div className="flex items-start justify-between gap-4">

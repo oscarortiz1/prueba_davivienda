@@ -65,30 +65,74 @@ export default function SurveyResults() {
   const handleExport = () => {
     if (!survey || !responses) return
 
-    const headers = ['Email', ...survey.questions.map((q: any) => q.title)]
-    const rows = responses.map(response => {
-      const row = [response.respondentEmail]
-      survey.questions.forEach((question: any) => {
-        const answer = response.answers.find(a => a.questionId === question.id)
-        row.push(answer ? answer.value.join(', ') : '')
+    // BOM para Excel UTF-8
+    const BOM = '\uFEFF'
+    
+    // Información del encabezado
+    const title = `"Encuesta: ${survey.title}"`
+    const date = `"Fecha de exportación: ${new Date().toLocaleString('es-ES')}"`
+    const totalResponses = `"Total de respuestas: ${responses.length}"`
+    const separator = '' // Línea vacía
+    
+    // Encabezados de columnas con información adicional
+    const headers = [
+      'No.',
+      'Email del participante',
+      'Fecha y hora de respuesta',
+      ...survey.questions.map((q: any) => {
+        const typeLabel = getQuestionTypeLabel(q.type.toLowerCase().replace(/_/g, '-'))
+        return `${q.title} (${typeLabel})`
       })
-      return row
-    })
+    ]
+    
+    // Filas de datos
+    const rows = responses
+      .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()) // Más reciente primero
+      .map((response, index) => {
+        const row = [
+          String(index + 1), // Número de respuesta
+          response.respondentId || response.respondentEmail || 'Anónimo',
+          formatDateForExport(response.completedAt)
+        ]
+        
+        survey.questions.forEach((question: any) => {
+          const answer = response.answers.find(a => a.questionId === question.id)
+          if (answer && answer.value) {
+            // Formatear respuestas múltiples con separador
+            row.push(answer.value.join(' | '))
+          } else {
+            row.push('Sin respuesta')
+          }
+        })
+        
+        return row
+      })
 
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n')
+    // Construir CSV con formato mejorado
+    const csvLines = [
+      title,
+      date,
+      totalResponses,
+      separator,
+      headers.map(h => `"${h}"`).join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    ]
 
+    const csvContent = BOM + csvLines.join('\r\n')
+
+    // Crear y descargar archivo
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     const url = URL.createObjectURL(blob)
+    const fileName = `Resultados_${survey.title.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`
+    
     link.setAttribute('href', url)
-    link.setAttribute('download', `resultados_${survey.title}_${new Date().toISOString().split('T')[0]}.csv`)
+    link.setAttribute('download', fileName)
     link.style.visibility = 'hidden'
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+    URL.revokeObjectURL(url)
     
     showToast('Resultados exportados exitosamente', 'success')
   }
@@ -308,6 +352,32 @@ function getQuestionTypeLabel(type: string): string {
     'scale': 'Escala lineal'
   }
   return types[type] || type
+}
+
+function formatDateForExport(dateString: string): string {
+  if (!dateString || dateString.trim() === '') {
+    return 'Sin fecha'
+  }
+  
+  try {
+    const date = new Date(dateString)
+    
+    if (isNaN(date.getTime())) {
+      return 'Fecha inválida'
+    }
+    
+    // Formato para Excel: DD/MM/YYYY HH:MM:SS
+    const day = String(date.getDate()).padStart(2, '0')
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const year = date.getFullYear()
+    const hours = String(date.getHours()).padStart(2, '0')
+    const minutes = String(date.getMinutes()).padStart(2, '0')
+    const seconds = String(date.getSeconds()).padStart(2, '0')
+    
+    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`
+  } catch (error) {
+    return 'Error en fecha'
+  }
 }
 
 function formatDate(dateString: string): string {

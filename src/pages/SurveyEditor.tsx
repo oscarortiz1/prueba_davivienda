@@ -183,6 +183,16 @@ export default function SurveyEditor() {
         showToast('Encuesta guardada exitosamente. Ahora puedes publicarla.', 'success')
         
         window.history.replaceState(null, '', `/survey/${survey.id}/edit`)
+        
+        const savedSurvey = await getSurvey(survey.id)
+        if (savedSurvey) {
+          const normalizedQuestions = savedSurvey.questions.map((q: any) => ({
+            ...q,
+            type: q.type.toLowerCase().replace(/_/g, '-') as QuestionType
+          }))
+          setQuestions(normalizedQuestions)
+        }
+        setHasUnsavedChanges(false)
       } else if ((id && id !== 'new') || currentSurveyId) {
         const surveyId = currentSurveyId || id
         await updateSurvey(surveyId, { title, description })
@@ -220,6 +230,16 @@ export default function SurveyEditor() {
         }
         
         showToast('Encuesta actualizada exitosamente', 'success')
+        
+        const updatedSurvey = await getSurvey(surveyId)
+        if (updatedSurvey) {
+          const normalizedQuestions = updatedSurvey.questions.map((q: any) => ({
+            ...q,
+            type: q.type.toLowerCase().replace(/_/g, '-') as QuestionType
+          }))
+          setQuestions(normalizedQuestions)
+        }
+        
         setHasUnsavedChanges(false)
       }
     } catch (error: any) {
@@ -290,7 +310,7 @@ export default function SurveyEditor() {
               <Button 
                 variant="ghost" 
                 onClick={handleSave}
-                disabled={saving || !title.trim() || questions.length === 0}
+                disabled={saving || !title.trim() || questions.length === 0 || (!!currentSurveyId && !hasUnsavedChanges)}
               >
                 {saving ? 'Guardando...' : 'Guardar'}
               </Button>

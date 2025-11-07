@@ -7,9 +7,13 @@ interface ResponseState {
   answers: { [questionId: string]: string | string[] }
   respondentEmail: string
   submitting: boolean
+  survey: any | null
+  loading: boolean
   setAnswer: (questionId: string, value: string | string[]) => void
   setRespondentEmail: (email: string) => void
   setSubmitting: (submitting: boolean) => void
+  setSurvey: (survey: any | null) => void
+  setLoading: (loading: boolean) => void
   submitResponse: (surveyId: string) => Promise<void>
   reset: () => void
 }
@@ -18,6 +22,8 @@ export const useResponseStore = create<ResponseState>((set, get) => ({
   answers: {},
   respondentEmail: '',
   submitting: false,
+  survey: null,
+  loading: true,
 
   setAnswer: (questionId, value) => {
     set(state => ({
@@ -28,6 +34,10 @@ export const useResponseStore = create<ResponseState>((set, get) => ({
   setRespondentEmail: (email) => set({ respondentEmail: email }),
 
   setSubmitting: (submitting) => set({ submitting }),
+
+  setSurvey: (survey) => set({ survey }),
+
+  setLoading: (loading) => set({ loading }),
 
   submitResponse: async (surveyId) => {
     const { answers, respondentEmail } = get()
@@ -43,5 +53,5 @@ export const useResponseStore = create<ResponseState>((set, get) => ({
     })
   },
 
-  reset: () => set({ answers: {}, respondentEmail: '', submitting: false })
+  reset: () => set({ answers: {}, respondentEmail: '', submitting: false, survey: null, loading: true })
 }))

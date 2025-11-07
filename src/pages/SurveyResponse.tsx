@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useSurveyStore } from '../stores/surveyStore'
@@ -19,14 +19,15 @@ export default function SurveyResponse() {
   const answers = useResponseStore((state) => state.answers)
   const respondentEmail = useResponseStore((state) => state.respondentEmail)
   const submitting = useResponseStore((state) => state.submitting)
+  const survey = useResponseStore((state) => state.survey)
+  const loading = useResponseStore((state) => state.loading)
   const setAnswer = useResponseStore((state) => state.setAnswer)
   const setRespondentEmail = useResponseStore((state) => state.setRespondentEmail)
   const setSubmitting = useResponseStore((state) => state.setSubmitting)
+  const setSurvey = useResponseStore((state) => state.setSurvey)
+  const setLoading = useResponseStore((state) => state.setLoading)
   const submitResponse = useResponseStore((state) => state.submitResponse)
   const reset = useResponseStore((state) => state.reset)
-
-  const [survey, setSurvey] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     loadSurvey()

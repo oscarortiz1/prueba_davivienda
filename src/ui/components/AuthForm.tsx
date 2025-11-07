@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useFormStore } from '../../stores/formStore'
 import Input from './Input'
 import Button from './Button'
@@ -27,10 +27,12 @@ export default function AuthForm({ title, cta, fields, onSubmit, subtitle }: Pro
   const setLoading = useFormStore((state) => state.setLoading)
   const setGlobalError = useFormStore((state) => state.setGlobalError)
   const reset = useFormStore((state) => state.reset)
+  
+  const isSubmitting = useRef(false)
 
   useEffect(() => {
     reset(fields.map(f => f.name))
-  }, [])
+  }, [reset])
 
   function handleChange(name: string, v: string) {
     setValue(name, v)
@@ -38,6 +40,13 @@ export default function AuthForm({ title, cta, fields, onSubmit, subtitle }: Pro
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
+    
+    if (loading || isSubmitting.current) {
+      return
+    }
+    
+    isSubmitting.current = true
+    
     setGlobalError(null)
     setErrors({})
     
@@ -50,6 +59,7 @@ export default function AuthForm({ title, cta, fields, onSubmit, subtitle }: Pro
     })
     if (Object.keys(newErrors).length) {
       setErrors(newErrors)
+      isSubmitting.current = false
       return
     }
 
@@ -59,7 +69,6 @@ export default function AuthForm({ title, cta, fields, onSubmit, subtitle }: Pro
     } catch (err: any) {
       const errorMessage = err?.message || 'Error inesperado'
 
-      // Verificar si el error contiene múltiples campos (separados por comas)
       if (errorMessage.includes(':')) {
         const fieldErrors: Record<string, string> = {}
         const errorParts = errorMessage.split(', ')
@@ -83,6 +92,7 @@ export default function AuthForm({ title, cta, fields, onSubmit, subtitle }: Pro
       }
     } finally {
       setLoading(false)
+      isSubmitting.current = false
     }
   }
 

@@ -69,7 +69,7 @@ export default function RegisterPage() {
             fields={[{ name: 'name', label: 'Nombre completo' }, { name: 'email', label: 'Email', type: 'email' }, { name: 'password', label: 'Contraseña', type: 'password' }]}
             onSubmit={async (values) => {
               await register({ name: values.name, email: values.email, password: values.password })
-              navigate('/')
+              navigate('/login?registered=true')
             }}
           />
           <p className="mt-6 text-center text-sm text-gray-500">

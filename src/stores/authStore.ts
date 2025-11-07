@@ -2,8 +2,7 @@ import { create } from 'zustand'
 import { User } from '../domain/User'
 import axios from 'axios'
 
-const API_URL = 'http://localhost:8080/api'
-
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
 
 axios.defaults.baseURL = API_URL
 
@@ -57,7 +56,6 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ user, token })
       localStorage.setItem('token', token)
     } catch (error: any) {
-      // Manejar errores de validación del backend
       if (error.response?.data?.errors) {
         const backendErrors = error.response.data.errors
         const errorMessages = Object.entries(backendErrors)
@@ -71,15 +69,8 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   register: async (data) => {
     try {
-      const response = await axios.post('/auth/register', data)
-      const { token, userId, name, email } = response.data
-      
-      const user: User = { id: userId, name, email }
-      
-      set({ user, token })
-      localStorage.setItem('token', token)
+      await axios.post('/auth/register', data)
     } catch (error: any) {
-      // Manejar errores de validación del backend
       if (error.response?.data?.errors) {
         const backendErrors = error.response.data.errors
         const errorMessages = Object.entries(backendErrors)
@@ -87,7 +78,7 @@ export const useAuthStore = create<AuthState>((set) => ({
           .join(', ')
         throw new Error(errorMessages)
       }
-      throw new Error(error.response?.data?.message || 'Registration failed')
+      throw new Error(error.response?.data?.message || 'Error en el registro')
     }
   },
 

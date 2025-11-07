@@ -9,9 +9,7 @@ import { useSurveyStore } from './stores/surveyStore'
 useAuthStore.getState().initAuth()
 
 createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
-  </React.StrictMode>
+  <BrowserRouter>
+    <App />
+  </BrowserRouter>
 )

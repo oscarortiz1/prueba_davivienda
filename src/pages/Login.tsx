@@ -1,5 +1,5 @@
-import React from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useEffect, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import Card from '../ui/components/Card'
 import AuthForm from '../ui/components/AuthForm'
 import Logo from '../ui/components/Logo'
@@ -8,6 +8,16 @@ import { useAuthStore } from '../stores/authStore'
 export default function LoginPage() {
   const login = useAuthStore((state) => state.login)
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false)
+
+  useEffect(() => {
+    if (searchParams.get('registered') === 'true') {
+      setShowSuccessMessage(true)
+      setSearchParams({})
+      setTimeout(() => setShowSuccessMessage(false), 5000)
+    }
+  }, [searchParams, setSearchParams])
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-red-100 via-white to-orange-100 flex items-center justify-center px-4 py-16">
@@ -62,6 +72,19 @@ export default function LoginPage() {
         </div>
 
         <Card className="mx-auto w-full max-w-md">
+          {showSuccessMessage && (
+            <div className="mb-4 rounded-lg bg-green-50 p-4 border border-green-200">
+              <div className="flex items-center gap-3">
+                <svg className="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <p className="text-sm font-semibold text-green-800">¡Registro exitoso!</p>
+                  <p className="text-xs text-green-700">Ahora puedes iniciar sesión con tus credenciales.</p>
+                </div>
+              </div>
+            </div>
+          )}
           <AuthForm
             title="Iniciar sesión"
             cta="Entrar"

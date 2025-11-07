@@ -21,11 +21,13 @@ export default function SurveyResponse() {
   const submitting = useResponseStore((state) => state.submitting)
   const survey = useResponseStore((state) => state.survey)
   const loading = useResponseStore((state) => state.loading)
+  const hasResponded = useResponseStore((state) => state.hasResponded)
   const setAnswer = useResponseStore((state) => state.setAnswer)
   const setRespondentEmail = useResponseStore((state) => state.setRespondentEmail)
   const setSubmitting = useResponseStore((state) => state.setSubmitting)
   const setSurvey = useResponseStore((state) => state.setSurvey)
   const setLoading = useResponseStore((state) => state.setLoading)
+  const checkIfResponded = useResponseStore((state) => state.checkIfResponded)
   const submitResponse = useResponseStore((state) => state.submitResponse)
   const reset = useResponseStore((state) => state.reset)
 
@@ -37,8 +39,9 @@ export default function SurveyResponse() {
   useEffect(() => {
     if (user?.email) {
       setRespondentEmail(user.email)
+      checkIfResponded(surveyId, user.email)
     }
-  }, [user])
+  }, [user, surveyId])
 
   const loadSurvey = async () => {
     setLoading(true)
@@ -112,6 +115,42 @@ export default function SurveyResponse() {
           <p className="text-gray-600">Encuesta no encontrada</p>
           <Button onClick={() => navigate('/')} className="mt-4">Volver al inicio</Button>
         </div>
+      </div>
+    )
+  }
+
+  if (hasResponded) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-orange-50">
+        <header className="border-b border-gray-200 bg-white/80 backdrop-blur-sm">
+          <div className="mx-auto max-w-3xl px-4 py-4 sm:px-6">
+            <div className="flex items-center justify-between">
+              <button
+                onClick={() => navigate('/')}
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Volver
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
+          <div className="rounded-xl border border-green-200 bg-green-50 p-8 text-center shadow-sm">
+            <svg className="mx-auto h-16 w-16 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h2 className="mt-4 text-2xl font-bold text-green-900">¡Encuesta ya respondida!</h2>
+            <p className="mt-2 text-green-700">Ya has respondido esta encuesta anteriormente.</p>
+            <p className="mt-1 text-sm text-green-600">Solo se permite una respuesta por usuario.</p>
+            <Button onClick={() => navigate('/')} className="mt-6">
+              Volver al inicio
+            </Button>
+          </div>
+        </main>
       </div>
     )
   }

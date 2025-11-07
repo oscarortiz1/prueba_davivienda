@@ -3,8 +3,9 @@ import { useAuthStore } from '../stores/authStore'
 import { useSurveyStore } from '../stores/surveyStore'
 import { useUIStore } from '../stores/uiStore'
 import { useToastStore } from '../stores/toastStore'
+import { useResponseStore } from '../stores/responseStore'
 import Button from '../ui/components/Button'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function HomePage() {
   const user = useAuthStore((state) => state.user)
@@ -18,7 +19,10 @@ export default function HomePage() {
   const deleteConfirm = useUIStore((state) => state.deleteConfirmId)
   const setDeleteConfirm = useUIStore((state) => state.setDeleteConfirmId)
   const showToast = useToastStore((state) => state.showToast)
+  const checkIfResponded = useResponseStore((state) => state.checkIfResponded)
   const navigate = useNavigate()
+  
+  const [respondedSurveys, setRespondedSurveys] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     refreshSurveys()
@@ -30,6 +34,25 @@ export default function HomePage() {
     
     return () => clearInterval(interval)
   }, [refreshSurveys, refreshPublishedSurveys])
+
+  useEffect(() => {
+    if (user?.email && publishedSurveys.length > 0) {
+      checkRespondedSurveys()
+    }
+  }, [user, publishedSurveys])
+
+  const checkRespondedSurveys = async () => {
+    if (!user?.email) return
+    
+    const responded = new Set<string>()
+    for (const survey of publishedSurveys) {
+      const hasResponded = await checkIfResponded(survey.id, user.email)
+      if (hasResponded) {
+        responded.add(survey.id)
+      }
+    }
+    setRespondedSurveys(responded)
+  }
 
   const mySurveys = surveys.filter(s => s.createdBy === user?.id)
   const otherPublishedSurveys = publishedSurveys.filter(s => s.createdBy !== user?.id)
@@ -236,11 +259,14 @@ export default function HomePage() {
                       <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800">
                         ● Publicada
                       </span>
-                      <span className="text-xs text-gray-500">
-                        <svg className="inline h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                      </span>
+                      {respondedSurveys.has(survey.id) && (
+                        <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-800">
+                          <svg className="mr-1 h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Respondida
+                        </span>
+                      )}
                     </div>
                     <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">{survey.title}</h3>
                     <p className="mt-1 text-sm text-gray-600 line-clamp-2">{survey.description}</p>
@@ -264,8 +290,9 @@ export default function HomePage() {
                   <Button
                     onClick={() => navigate(`/survey/${survey.id}/respond`)}
                     className="w-full justify-center text-sm"
+                    disabled={respondedSurveys.has(survey.id)}
                   >
-                    Responder encuesta
+                    {respondedSurveys.has(survey.id) ? 'Ya respondida' : 'Responder encuesta'}
                   </Button>
                 </div>
               ))}

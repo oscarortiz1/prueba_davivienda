@@ -9,7 +9,18 @@ interface PieChartComponentProps {
   title: string
 }
 
-const COLORS = ['#DC2626', '#EF4444', '#F87171', '#FCA5A5', '#FECACA', '#FEE2E2']
+const COLORS = [
+  '#DC2626', // Rojo
+  '#2563EB', // Azul
+  '#059669', // Verde
+  '#D97706', // Naranja
+  '#7C3AED', // Púrpura
+  '#DB2777', // Rosa
+  '#0891B2', // Cyan
+  '#65A30D', // Lima
+  '#DC2626', // Rojo claro (repetición con variación)
+  '#4F46E5', // Índigo
+]
 
 export default function PieChartComponent({ data, title }: PieChartComponentProps) {
   const chartData = data.map((item, index) => ({

@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import Card from '../ui/components/Card'
 import AuthForm from '../ui/components/AuthForm'
 import Logo from '../ui/components/Logo'
-import { useAuth } from '../context/AuthContext'
+import { useAuthStore } from '../stores/authStore'
 
 export default function LoginPage() {
-  const { login } = useAuth()
+  const login = useAuthStore((state) => state.login)
   const navigate = useNavigate()
 
   return (

@@ -1,4 +1,5 @@
-import React from 'react'
+import { useEffect } from 'react'
+import { useFormStore } from '../../stores/formStore'
 import Input from './Input'
 import Button from './Button'
 
@@ -17,14 +18,22 @@ type Props = {
 }
 
 export default function AuthForm({ title, cta, fields, onSubmit, subtitle }: Props) {
-  const [values, setValues] = React.useState<Record<string, string>>(() => Object.fromEntries(fields.map(f => [f.name, ''])))
-  const [errors, setErrors] = React.useState<Record<string, string | null>>({})
-  const [loading, setLoading] = React.useState(false)
-  const [globalError, setGlobalError] = React.useState<string | null>(null)
+  const values = useFormStore((state) => state.values)
+  const errors = useFormStore((state) => state.errors)
+  const loading = useFormStore((state) => state.loading)
+  const globalError = useFormStore((state) => state.globalError)
+  const setValue = useFormStore((state) => state.setValue)
+  const setErrors = useFormStore((state) => state.setErrors)
+  const setLoading = useFormStore((state) => state.setLoading)
+  const setGlobalError = useFormStore((state) => state.setGlobalError)
+  const reset = useFormStore((state) => state.reset)
+
+  useEffect(() => {
+    reset(fields.map(f => f.name))
+  }, [])
 
   function handleChange(name: string, v: string) {
-    setValues(prev => ({ ...prev, [name]: v }))
-    setErrors(prev => ({ ...prev, [name]: null }))
+    setValue(name, v)
   }
 
   async function submit(e: React.FormEvent) {
@@ -47,9 +56,9 @@ export default function AuthForm({ title, cta, fields, onSubmit, subtitle }: Pro
       await onSubmit(values)
     } catch (err: any) {
       const errorMessage = err?.message || 'Error inesperado'
-      // Si el error es sobre el email, mostrarlo en el campo de email
+
       if (errorMessage.toLowerCase().includes('correo') || errorMessage.toLowerCase().includes('email') || errorMessage.toLowerCase().includes('@')) {
-        setErrors(prev => ({ ...prev, email: errorMessage }))
+        setErrors({ ...errors, email: errorMessage })
       } else {
         setGlobalError(errorMessage)
       }

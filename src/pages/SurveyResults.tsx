@@ -23,7 +23,6 @@ export default function SurveyResults() {
   const showToast = useToastStore((state) => state.showToast)
   const pollingIntervalRef = useRef<number | null>(null)
 
-  // Initial load
   useEffect(() => {
     if (id) {
       loadResults(id)
@@ -31,15 +30,13 @@ export default function SurveyResults() {
     return () => reset()
   }, [id, loadResults, reset])
 
-  // Real-time polling - refresh every 5 seconds
   useEffect(() => {
     if (id && survey) {
-      // Start polling
       pollingIntervalRef.current = window.setInterval(() => {
         refreshResults(id)
-      }, 5000) // 5 seconds
+      }, 5000)
 
-      // Cleanup on unmount
+
       return () => {
         if (pollingIntervalRef.current) {
           clearInterval(pollingIntervalRef.current)
@@ -207,8 +204,8 @@ export default function SurveyResults() {
               <div>
                 <p className="text-sm text-gray-600">Última respuesta</p>
                 <p className="text-sm font-bold text-gray-900">
-                  {totalResponses > 0 
-                    ? new Date(responses[responses.length - 1].submittedAt).toLocaleDateString()
+                  {totalResponses > 0 && responses.length > 0
+                    ? formatDate(responses[responses.length - 1].submittedAt)
                     : 'N/A'
                   }
                 </p>
@@ -297,4 +294,20 @@ function getQuestionTypeLabel(type: string): string {
     'scale': 'Escala lineal'
   }
   return types[type] || type
+}
+
+function formatDate(dateString: string): string {
+  try {
+    const date = new Date(dateString)
+    if (isNaN(date.getTime())) {
+      return 'N/A'
+    }
+    return date.toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    })
+  } catch (error) {
+    return 'N/A'
+  }
 }

@@ -313,7 +313,6 @@ function QuestionResponse({
           placeholder="Tu respuesta"
           value={(value as string) || ''}
           onChange={(e) => onChange(e.target.value)}
-          required={question.required}
         />
       )}
 
@@ -327,7 +326,6 @@ function QuestionResponse({
                 value={option}
                 checked={value === option}
                 onChange={(e) => onChange(e.target.value)}
-                required={question.required}
                 className="h-4 w-4 border-gray-300 text-red-600 focus:ring-red-600"
               />
               <span className="text-gray-700">{option}</span>
@@ -356,7 +354,6 @@ function QuestionResponse({
         <select
           value={(value as string) || ''}
           onChange={(e) => onChange(e.target.value)}
-          required={question.required}
           className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
         >
           <option value="">Selecciona una opción</option>
@@ -381,7 +378,6 @@ function QuestionResponse({
                   value={option}
                   checked={value === option}
                   onChange={(e) => onChange(e.target.value)}
-                  required={question.required}
                   className="peer sr-only"
                 />
                 <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-gray-300 bg-white text-sm font-semibold text-gray-700 transition peer-checked:border-red-600 peer-checked:bg-red-600 peer-checked:text-white group-hover:border-red-400">

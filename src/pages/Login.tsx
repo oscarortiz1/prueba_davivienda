@@ -92,7 +92,7 @@ export default function LoginPage() {
             fields={[{ name: 'email', label: 'Email', type: 'email' }, { name: 'password', label: 'Contraseña', type: 'password' }]}
             onSubmit={async (values) => {
               await login(values.email, values.password)
-              navigate('/')
+              navigate('/survey/new')
             }}
           />
           <p className="mt-6 text-center text-sm text-gray-500">

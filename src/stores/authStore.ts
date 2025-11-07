@@ -57,6 +57,14 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ user, token })
       localStorage.setItem('token', token)
     } catch (error: any) {
+      // Manejar errores de validación del backend
+      if (error.response?.data?.errors) {
+        const backendErrors = error.response.data.errors
+        const errorMessages = Object.entries(backendErrors)
+          .map(([field, msg]) => `${field}: ${msg}`)
+          .join(', ')
+        throw new Error(errorMessages)
+      }
       throw new Error(error.response?.data?.message || 'Login failed')
     }
   },
@@ -71,6 +79,14 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ user, token })
       localStorage.setItem('token', token)
     } catch (error: any) {
+      // Manejar errores de validación del backend
+      if (error.response?.data?.errors) {
+        const backendErrors = error.response.data.errors
+        const errorMessages = Object.entries(backendErrors)
+          .map(([field, msg]) => `${field}: ${msg}`)
+          .join(', ')
+        throw new Error(errorMessages)
+      }
       throw new Error(error.response?.data?.message || 'Registration failed')
     }
   },

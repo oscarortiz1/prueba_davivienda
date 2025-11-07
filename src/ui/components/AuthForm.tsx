@@ -39,6 +39,8 @@ export default function AuthForm({ title, cta, fields, onSubmit, subtitle }: Pro
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     setGlobalError(null)
+    setErrors({})
+    
     const newErrors: Record<string, string> = {}
     fields.forEach(f => {
       if (!values[f.name]) newErrors[f.name] = 'Campo requerido'
@@ -57,8 +59,25 @@ export default function AuthForm({ title, cta, fields, onSubmit, subtitle }: Pro
     } catch (err: any) {
       const errorMessage = err?.message || 'Error inesperado'
 
-      if (errorMessage.toLowerCase().includes('correo') || errorMessage.toLowerCase().includes('email') || errorMessage.toLowerCase().includes('@')) {
-        setErrors({ ...errors, email: errorMessage })
+      // Verificar si el error contiene múltiples campos (separados por comas)
+      if (errorMessage.includes(':')) {
+        const fieldErrors: Record<string, string> = {}
+        const errorParts = errorMessage.split(', ')
+        
+        errorParts.forEach((part: string) => {
+          const [field, msg] = part.split(': ')
+          if (field && msg) {
+            fieldErrors[field.toLowerCase()] = msg
+          }
+        })
+        
+        if (Object.keys(fieldErrors).length > 0) {
+          setErrors(fieldErrors)
+        } else {
+          setGlobalError(errorMessage)
+        }
+      } else if (errorMessage.toLowerCase().includes('correo') || errorMessage.toLowerCase().includes('email') || errorMessage.toLowerCase().includes('@')) {
+        setErrors({ email: errorMessage })
       } else {
         setGlobalError(errorMessage)
       }

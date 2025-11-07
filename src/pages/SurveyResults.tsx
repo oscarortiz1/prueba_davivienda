@@ -110,6 +110,20 @@ export default function SurveyResults() {
 
   const totalResponses = responses.length
 
+  const getLastResponseDate = (): string => {
+    if (responses.length === 0) {
+      return ''
+    }
+    
+    const sortedResponses = [...responses].sort((a, b) => {
+      const dateA = new Date(a.completedAt).getTime()
+      const dateB = new Date(b.completedAt).getTime()
+      return dateB - dateA
+    })
+    
+    return sortedResponses[0]?.completedAt || ''
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-orange-50">
       {/* Header */}
@@ -205,8 +219,8 @@ export default function SurveyResults() {
                 <p className="text-sm text-gray-600">Última respuesta</p>
                 <p className="text-sm font-bold text-gray-900">
                   {totalResponses > 0 && responses.length > 0
-                    ? formatDate(responses[responses.length - 1].submittedAt)
-                    : 'N/A'
+                    ? formatDate(getLastResponseDate())
+                    : 'Sin respuestas'
                   }
                 </p>
               </div>
@@ -297,17 +311,26 @@ function getQuestionTypeLabel(type: string): string {
 }
 
 function formatDate(dateString: string): string {
+  if (!dateString || dateString.trim() === '') {
+    return 'Sin respuestas'
+  }
+  
   try {
     const date = new Date(dateString)
+    
     if (isNaN(date.getTime())) {
-      return 'N/A'
+      return 'Fecha inválida'
     }
+    
     return date.toLocaleDateString('es-ES', {
       year: 'numeric',
       month: '2-digit',
-      day: '2-digit'
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
     })
   } catch (error) {
-    return 'N/A'
+    console.error('Error formatting date:', error, dateString)
+    return 'Error en fecha'
   }
 }

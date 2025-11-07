@@ -12,9 +12,9 @@ interface SurveyResponse {
   id: string
   surveyId: string
   respondentId: string
-  respondentEmail: string
+  respondentEmail?: string
   answers: Answer[]
-  submittedAt: string
+  completedAt: string
 }
 
 interface QuestionResult {
@@ -128,7 +128,6 @@ export const useResultsStore = create<ResultsState>((set, get) => ({
   },
 
   refreshResults: async (surveyId: string) => {
-    // Silent refresh without showing loading state
     try {
       const surveyResponse = await axios.get(`${API_URL}/surveys/${surveyId}`)
       const survey = surveyResponse.data
@@ -199,7 +198,6 @@ export const useResultsStore = create<ResultsState>((set, get) => ({
       set({ survey, responses, results })
     } catch (error: any) {
       console.error('Error refreshing results:', error)
-      // Don't update error state for silent refresh
     }
   },
 

@@ -33,8 +33,8 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
-        <Route path="/survey/:id/edit" element={<ProtectedRoute><SurveyEditor /></ProtectedRoute>} />
         <Route path="/survey/new" element={<ProtectedRoute><SurveyEditor /></ProtectedRoute>} />
+        <Route path="/survey/:id/edit" element={<ProtectedRoute><SurveyEditor /></ProtectedRoute>} />
       </Routes>
       
       {/* Toast Container */}

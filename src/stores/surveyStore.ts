@@ -67,33 +67,51 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
   },
   
   updateSurvey: async (id, data) => {
+    if (!id || id === 'new') {
+      throw new Error('Debes guardar la encuesta antes de actualizarla')
+    }
     const response = await axios.put(`${API_URL}/surveys/${id}`, data)
     await get().refreshSurveys()
     return response.data
   },
   
   deleteSurvey: async (id: string) => {
+    if (!id) {
+      throw new Error('ID de encuesta requerido')
+    }
     await axios.delete(`${API_URL}/surveys/${id}`)
     await get().refreshSurveys()
   },
   
   publishSurvey: async (id) => {
+    if (!id || id === 'new') {
+      throw new Error('Debes guardar la encuesta antes de publicarla')
+    }
     const response = await axios.put(`${API_URL}/surveys/${id}/publish`)
     await get().refreshSurveys()
     return response.data
   },
   
   addQuestion: async (surveyId, question) => {
+    if (!surveyId) {
+      throw new Error('ID de encuesta requerido para agregar pregunta')
+    }
     const response = await axios.post(`${API_URL}/surveys/${surveyId}/questions`, question)
     return response.data
   },
   
   updateQuestion: async (surveyId, questionId, question) => {
+    if (!surveyId || !questionId) {
+      throw new Error('IDs requeridos para actualizar pregunta')
+    }
     const response = await axios.put(`${API_URL}/surveys/${surveyId}/questions/${questionId}`, question)
     return response.data
   },
   
   deleteQuestion: async (surveyId, questionId) => {
+    if (!surveyId || !questionId) {
+      throw new Error('IDs requeridos para eliminar pregunta')
+    }
     const response = await axios.delete(`${API_URL}/surveys/${surveyId}/questions/${questionId}`)
     return response.data
   },

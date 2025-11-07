@@ -8,7 +8,8 @@ import { QuestionType, Question } from '../domain/Survey'
 import Button from '../ui/components/Button'
 
 export default function SurveyEditor() {
-  const { id } = useParams<{ id: string }>()
+  const params = useParams<{ id: string }>()
+  const id = params.id || 'new'
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const createSurvey = useSurveyStore((state) => state.createSurvey)
@@ -71,6 +72,7 @@ export default function SurveyEditor() {
     }
     
     setSaving(true)
+    
     try {
       if (id === 'new') {
         const survey = await createSurvey({
@@ -90,9 +92,11 @@ export default function SurveyEditor() {
         
         showToast('Encuesta guardada exitosamente. Puedes seguir editándola.', 'success')
         
-        navigate(`/survey/${survey.id}/edit`, { replace: true })
-      } else {
-        await updateSurvey(id!, { title, description })
+        setTimeout(() => {
+          navigate(`/survey/${survey.id}/edit`, { replace: true })
+        }, 1000)
+      } else if (id && id !== 'new') {
+        await updateSurvey(id, { title, description })
         showToast('Encuesta actualizada exitosamente', 'success')
       }
     } catch (error: any) {
@@ -153,15 +157,15 @@ export default function SurveyEditor() {
             <div className="flex gap-2">
               <Button 
                 variant="ghost" 
-                onClick={handleSave} 
+                onClick={handleSave}
                 disabled={saving || !title.trim() || questions.length === 0}
               >
                 {saving ? 'Guardando...' : 'Guardar'}
               </Button>
-              {id !== 'new' && (
+              {id && id !== 'new' && (
                 <Button 
                   onClick={handlePublish} 
-                  disabled={!title.trim() || questions.length === 0}
+                  disabled={!id || !title.trim() || questions.length === 0}
                 >
                   Publicar
                 </Button>

@@ -15,7 +15,11 @@ export default function Input({ label, className = '', error = null, id, ...rest
         id={inputId}
         aria-invalid={!!error}
         aria-describedby={error ? `${inputId}-error` : undefined}
-        className={`w-full px-3 py-2 border rounded-md bg-white text-gray-800 focus:outline-none focus:shadow-[0_0_0_4px_rgba(99,102,241,0.12)] ${className}`}
+        className={`w-full px-3 py-2 border rounded-md bg-white text-gray-800 focus:outline-none transition-all ${
+          error 
+            ? 'border-red-500 focus:border-red-600 focus:shadow-[0_0_0_4px_rgba(220,38,38,0.12)]' 
+            : 'border-gray-300 focus:border-red-500 focus:shadow-[0_0_0_4px_rgba(220,38,38,0.12)]'
+        } ${className}`}
         {...rest}
       />
       {error && <p id={`${inputId}-error`} role="alert" className="mt-1 text-sm text-red-600">{error}</p>}

@@ -4,11 +4,13 @@ import { User } from '../domain/User'
 export function makeAuthUseCases(repo: AuthRepository) {
   async function register(dto: RegisterDTO): Promise<User> {
     if (!dto.email || !dto.password || !dto.name) throw new Error('Todos los campos son obligatorios')
+    if (!dto.email.includes('@')) throw new Error('El correo debe contener el símbolo @')
     return repo.register(dto)
   }
 
   async function login(email: string, password: string): Promise<User> {
     if (!email || !password) throw new Error('Email y password son requeridos')
+    if (!email.includes('@')) throw new Error('El correo debe contener el símbolo @')
     return repo.login(email, password)
   }
 

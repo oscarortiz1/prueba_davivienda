@@ -8,6 +8,7 @@ export interface Question {
   options?: string[]
   required: boolean
   order: number
+  imageUrl?: string
 }
 
 export interface Survey {

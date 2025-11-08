@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useResultsStore } from '../stores/resultsStore'
 import { useToastStore } from '../stores/toastStore'
+import { Question } from '../domain/Survey'
 import Button from '../ui/components/Button'
 import BarChartComponent from '../ui/components/charts/BarChartComponent'
 import PieChartComponent from '../ui/components/charts/PieChartComponent'
@@ -65,16 +66,13 @@ export default function SurveyResults() {
   const handleExport = () => {
     if (!survey || !responses) return
 
-    // BOM para Excel UTF-8
     const BOM = '\uFEFF'
     
-    // Información del encabezado
     const title = `"Encuesta: ${survey.title}"`
     const date = `"Fecha de exportación: ${new Date().toLocaleString('es-ES')}"`
     const totalResponses = `"Total de respuestas: ${responses.length}"`
-    const separator = '' // Línea vacía
+    const separator = '' 
     
-    // Encabezados de columnas con información adicional
     const headers = [
       'No.',
       'Email del participante',
@@ -85,12 +83,11 @@ export default function SurveyResults() {
       })
     ]
     
-    // Filas de datos
     const rows = responses
-      .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()) // Más reciente primero
+      .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()) 
       .map((response, index) => {
         const row = [
-          String(index + 1), // Número de respuesta
+          String(index + 1), 
           response.respondentId || response.respondentEmail || 'Anónimo',
           formatDateForExport(response.completedAt)
         ]
@@ -98,7 +95,6 @@ export default function SurveyResults() {
         survey.questions.forEach((question: any) => {
           const answer = response.answers.find(a => a.questionId === question.id)
           if (answer && answer.value) {
-            // Formatear respuestas múltiples con separador
             row.push(answer.value.join(' | '))
           } else {
             row.push('Sin respuesta')
@@ -108,7 +104,6 @@ export default function SurveyResults() {
         return row
       })
 
-    // Construir CSV con formato mejorado
     const csvLines = [
       title,
       date,
@@ -120,7 +115,6 @@ export default function SurveyResults() {
 
     const csvContent = BOM + csvLines.join('\r\n')
 
-    // Crear y descargar archivo
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     const url = URL.createObjectURL(blob)
@@ -302,40 +296,55 @@ export default function SurveyResults() {
           <div className="space-y-8">
             <h2 className="text-2xl font-bold text-gray-900">Resultados por Pregunta</h2>
             
-            {results.map((result, index) => (
-              <div key={result.questionId}>
-                <div className="mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {index + 1}. {result.questionTitle}
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    Tipo: {getQuestionTypeLabel(result.questionType)} • {result.totalResponses} respuestas
-                  </p>
-                </div>
+            {results.map((result, index) => {
+              const question = survey.questions.find((q: Question) => q.id === result.questionId)
+              
+              return (
+                <div key={result.questionId}>
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      {index + 1}. {result.questionTitle}
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      Tipo: {getQuestionTypeLabel(result.questionType)} • {result.totalResponses} respuestas
+                    </p>
+                  </div>
 
-                {result.questionType === 'text' ? (
-                  <TextResponses 
-                    responses={result.textResponses || []} 
-                    title="Respuestas"
-                  />
-                ) : result.questionType === 'scale' ? (
-                  <BarChartComponent 
-                    data={result.answers} 
-                    title="Distribución de Respuestas"
-                  />
-                ) : result.answers.length <= 5 ? (
-                  <PieChartComponent 
-                    data={result.answers} 
-                    title="Distribución de Respuestas"
-                  />
-                ) : (
-                  <BarChartComponent 
-                    data={result.answers} 
-                    title="Distribución de Respuestas"
-                  />
-                )}
-              </div>
-            ))}
+                  {/* Mostrar imagen si existe */}
+                  {question?.imageUrl && (
+                    <div className="mb-4">
+                      <img
+                        src={question.imageUrl}
+                        alt="Imagen de la pregunta"
+                        className="max-h-64 w-full rounded-lg border border-gray-300 object-contain bg-gray-50"
+                      />
+                    </div>
+                  )}
+
+                  {result.questionType === 'text' ? (
+                    <TextResponses 
+                      responses={result.textResponses || []} 
+                      title="Respuestas"
+                    />
+                  ) : result.questionType === 'scale' ? (
+                    <BarChartComponent 
+                      data={result.answers} 
+                      title="Distribución de Respuestas"
+                    />
+                  ) : result.answers.length <= 5 ? (
+                    <PieChartComponent 
+                      data={result.answers} 
+                      title="Distribución de Respuestas"
+                    />
+                  ) : (
+                    <BarChartComponent 
+                      data={result.answers} 
+                      title="Distribución de Respuestas"
+                    />
+                  )}
+                </div>
+              )
+            })}
           </div>
         )}
       </main>
@@ -366,7 +375,6 @@ function formatDateForExport(dateString: string): string {
       return 'Fecha inválida'
     }
     
-    // Formato para Excel: DD/MM/YYYY HH:MM:SS
     const day = String(date.getDate()).padStart(2, '0')
     const month = String(date.getMonth() + 1).padStart(2, '0')
     const year = date.getFullYear()

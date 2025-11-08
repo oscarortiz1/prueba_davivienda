@@ -389,7 +389,16 @@ function QuestionResponse({
         {question.required && <span className="ml-1 text-red-600">*</span>}
       </h3>
 
-      {question.type === 'text' && (
+              {/* Mostrar imagen si existe */}
+              {question.imageUrl && (
+                <div className="mb-4">
+                  <img
+                    src={question.imageUrl}
+                    alt="Imagen de la pregunta"
+                    className="max-h-64 w-full rounded-lg border border-gray-300 object-contain bg-gray-50"
+                  />
+                </div>
+              )}      {question.type === 'text' && (
         <Input
           type="text"
           placeholder="Tu respuesta"

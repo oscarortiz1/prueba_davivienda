@@ -6,6 +6,7 @@ import { useEditorStore } from '../stores/editorStore'
 import { useToastStore } from '../stores/toastStore'
 import { QuestionType, Question } from '../domain/Survey'
 import Button from '../ui/components/Button'
+import ImageUpload from '../ui/components/ImageUpload'
 
 export default function SurveyEditor() {
   const params = useParams<{ id: string }>()
@@ -185,7 +186,8 @@ export default function SurveyEditor() {
             type: q.type.toUpperCase().replace(/-/g, '_'),
             options: q.options,
             required: q.required,
-            order: q.order
+            order: q.order,
+            imageUrl: q.imageUrl
           })
         }
         
@@ -240,7 +242,8 @@ export default function SurveyEditor() {
               type: q.type.toUpperCase().replace(/-/g, '_'),
               options: q.options,
               required: q.required,
-              order: q.order
+              order: q.order,
+              imageUrl: q.imageUrl
             })
           } else {
             await addQuestion(surveyId, {
@@ -248,7 +251,8 @@ export default function SurveyEditor() {
               type: q.type.toUpperCase().replace(/-/g, '_'),
               options: q.options,
               required: q.required,
-              order: q.order
+              order: q.order,
+              imageUrl: q.imageUrl
             })
           }
         }
@@ -730,6 +734,14 @@ function QuestionCard({
             <option key={type.value} value={type.value}>{type.label}</option>
           ))}
         </select>
+      </div>
+
+      {/* Componente para subir imagen */}
+      <div className="mb-4">
+        <ImageUpload
+          imageUrl={question.imageUrl}
+          onImageChange={(imageUrl) => onUpdate(index, 'imageUrl', imageUrl)}
+        />
       </div>
 
       {needsOptions && (

@@ -444,7 +444,7 @@ export default function SurveyEditor() {
 
           {/* Duration Section */}
           <div className="mt-6 border-t border-gray-200 pt-6">
-            <label className="mb-3 flex items-center justify-between text-sm font-medium text-gray-700">
+            <div className="mb-3 flex items-center justify-between text-sm font-medium text-gray-700">
               <div className="flex items-center gap-2">
                 <svg className="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -453,7 +453,11 @@ export default function SurveyEditor() {
               </div>
               {expiresAt && isPublished && !isEditingExpiration && (
                 <button
-                  onClick={() => setIsEditingExpiration(true)}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    setIsEditingExpiration(true)
+                  }}
                   className="flex items-center gap-1 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition-colors"
                 >
                   <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -464,7 +468,11 @@ export default function SurveyEditor() {
               )}
               {isEditingExpiration && (
                 <button
-                  onClick={() => setIsEditingExpiration(false)}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    setIsEditingExpiration(false)
+                  }}
                   className="flex items-center gap-1 rounded-md bg-gray-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-700 transition-colors"
                 >
                   <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -473,7 +481,7 @@ export default function SurveyEditor() {
                   Cancelar
                 </button>
               )}
-            </label>
+            </div>
             {expiresAt && isPublished && !isEditingExpiration ? (
               <div className="mb-4 rounded-lg border-l-4 border-purple-500 bg-purple-50 px-4 py-3">
                 <p className="text-sm font-semibold text-purple-900">

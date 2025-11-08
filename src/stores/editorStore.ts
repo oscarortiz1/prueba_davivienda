@@ -5,6 +5,8 @@ interface EditorState {
   title: string
   description: string
   questions: Question[]
+  durationValue: number | null
+  durationUnit: 'minutes' | 'hours' | 'days' | 'none'
   loading: boolean
   saving: boolean
   publishing: boolean
@@ -14,13 +16,22 @@ interface EditorState {
   setTitle: (title: string) => void
   setDescription: (description: string) => void
   setQuestions: (questions: Question[]) => void
+  setDuration: (value: number | null, unit: 'minutes' | 'hours' | 'days' | 'none') => void
   setLoading: (loading: boolean) => void
   setSaving: (saving: boolean) => void
   setPublishing: (publishing: boolean) => void
   setCurrentSurveyId: (id: string | null) => void
   setHasUnsavedChanges: (hasChanges: boolean) => void
   setIsPublished: (isPublished: boolean) => void
-  loadSurveyData: (title: string, description: string, questions: Question[], isPublished: boolean) => void
+  loadSurveyData: (
+    title: string, 
+    description: string, 
+    questions: Question[], 
+    isPublished: boolean,
+    durationValue?: number | null,
+    durationUnit?: 'minutes' | 'hours' | 'days' | 'none',
+    expiresAt?: Date | null
+  ) => void
   addQuestion: () => void
   updateQuestion: (index: number, field: keyof Question, value: any) => void
   deleteQuestion: (index: number) => void
@@ -31,6 +42,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   title: '',
   description: '',
   questions: [],
+  durationValue: null,
+  durationUnit: 'none',
   loading: false,
   saving: false,
   publishing: false,
@@ -43,6 +56,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setDescription: (description) => set({ description, hasUnsavedChanges: true }),
   
   setQuestions: (questions) => set({ questions }),
+
+  setDuration: (value, unit) => set({ durationValue: value, durationUnit: unit, hasUnsavedChanges: true }),
   
   setLoading: (loading) => set({ loading }),
   
@@ -56,13 +71,20 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   setIsPublished: (isPublished) => set({ isPublished }),
 
-  loadSurveyData: (title, description, questions, isPublished) => set({ 
-    title, 
-    description, 
-    questions, 
-    isPublished,
-    hasUnsavedChanges: false 
-  }),
+  loadSurveyData: (title, description, questions, isPublished, durationValue, durationUnit, expiresAt) => {
+    const finalDurationValue = durationValue !== undefined && durationValue !== null ? durationValue : null
+    const finalDurationUnit = durationUnit || 'none'
+    
+    set({ 
+      title, 
+      description, 
+      questions, 
+      isPublished,
+      durationValue: finalDurationValue,
+      durationUnit: finalDurationUnit,
+      hasUnsavedChanges: false 
+    })
+  },
 
   addQuestion: () => {
     const questions = get().questions
@@ -91,7 +113,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   reset: () => set({ 
     title: '', 
     description: '', 
-    questions: [], 
+    questions: [],
+    durationValue: null,
+    durationUnit: 'none',
     loading: false, 
     saving: false,
     publishing: false,

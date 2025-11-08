@@ -13,10 +13,22 @@ interface SurveyState {
   setLoading: (loading: boolean) => void
   refreshSurveys: () => Promise<void>
   refreshPublishedSurveys: () => Promise<void>
-  createSurvey: (data: { title: string; description: string }) => Promise<Survey>
+  createSurvey: (data: { 
+    title: string
+    description: string
+    durationValue?: number | null
+    durationUnit?: string
+    expiresAt?: Date | null 
+  }) => Promise<Survey>
   getSurvey: (id: string) => Promise<Survey>
   getPublicSurvey: (id: string) => Promise<Survey>
-  updateSurvey: (id: string, data: { title: string; description: string }) => Promise<Survey>
+  updateSurvey: (id: string, data: { 
+    title: string
+    description: string
+    durationValue?: number | null
+    durationUnit?: string
+    expiresAt?: Date | null 
+  }) => Promise<Survey>
   deleteSurvey: (id: string) => Promise<void>
   publishSurvey: (id: string) => Promise<Survey>
   addQuestion: (surveyId: string, question: any) => Promise<Survey>
@@ -57,7 +69,12 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
   },
 
   createSurvey: async (data) => {
-    const response = await axios.post(`${API_URL}/surveys`, data)
+    const payload = {
+      ...data,
+      expiresAt: data.expiresAt ? data.expiresAt.toISOString() : null
+    }
+    
+    const response = await axios.post(`${API_URL}/surveys`, payload)
     await get().refreshSurveys()
     return response.data
   },
@@ -76,7 +93,13 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
     if (!id || id === 'new') {
       throw new Error('Debes guardar la encuesta antes de actualizarla')
     }
-    const response = await axios.put(`${API_URL}/surveys/${id}`, data)
+    
+    const payload = {
+      ...data,
+      expiresAt: data.expiresAt ? data.expiresAt.toISOString() : null
+    }
+    
+    const response = await axios.put(`${API_URL}/surveys/${id}`, payload)
     await get().refreshSurveys()
     return response.data
   },

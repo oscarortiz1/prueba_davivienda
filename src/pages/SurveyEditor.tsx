@@ -24,6 +24,8 @@ export default function SurveyEditor() {
   const title = useEditorStore((state) => state.title)
   const description = useEditorStore((state) => state.description)
   const questions = useEditorStore((state) => state.questions)
+  const durationValue = useEditorStore((state) => state.durationValue)
+  const durationUnit = useEditorStore((state) => state.durationUnit)
   const loading = useEditorStore((state) => state.loading)
   const saving = useEditorStore((state) => state.saving)
   const publishing = useEditorStore((state) => state.publishing)
@@ -33,6 +35,7 @@ export default function SurveyEditor() {
   const setTitle = useEditorStore((state) => state.setTitle)
   const setDescription = useEditorStore((state) => state.setDescription)
   const setQuestions = useEditorStore((state) => state.setQuestions)
+  const setDuration = useEditorStore((state) => state.setDuration)
   const setLoading = useEditorStore((state) => state.setLoading)
   const setSaving = useEditorStore((state) => state.setSaving)
   const setPublishing = useEditorStore((state) => state.setPublishing)
@@ -72,7 +75,15 @@ export default function SurveyEditor() {
           type: q.type.toLowerCase().replace(/_/g, '-') as QuestionType
         }))
         
-        loadSurveyData(survey.title, survey.description, normalizedQuestions, survey.isPublished)
+        loadSurveyData(
+          survey.title, 
+          survey.description, 
+          normalizedQuestions, 
+          survey.isPublished,
+          survey.durationValue,
+          survey.durationUnit as 'minutes' | 'hours' | 'days' | 'none' | undefined,
+          survey.expiresAt
+        )
       }
     } catch (error: any) {
       showToast('Error al cargar la encuesta: ' + (error.response?.data?.message || error.message), 'error')
@@ -156,6 +167,17 @@ export default function SurveyEditor() {
     if (!validateQuestions()) {
       return
     }
+
+    let expiresAt: Date | null = null
+    if (durationUnit !== 'none' && durationValue && durationValue > 0) {
+      const now = new Date()
+      const milliseconds = durationValue * (
+        durationUnit === 'minutes' ? 60 * 1000 :
+        durationUnit === 'hours' ? 60 * 60 * 1000 :
+        24 * 60 * 60 * 1000  
+      )
+      expiresAt = new Date(now.getTime() + milliseconds)
+    }
     
     setSaving(true)
     
@@ -163,7 +185,10 @@ export default function SurveyEditor() {
       if (id === 'new' && !currentSurveyId) {
         const survey = await createSurvey({
           title,
-          description
+          description,
+          durationValue,
+          durationUnit,
+          expiresAt
         })
       
         for (const q of questions) {
@@ -192,7 +217,13 @@ export default function SurveyEditor() {
         setHasUnsavedChanges(false)
       } else if ((id && id !== 'new') || currentSurveyId) {
         const surveyId = currentSurveyId || id
-        await updateSurvey(surveyId, { title, description })
+        await updateSurvey(surveyId, { 
+          title, 
+          description,
+          durationValue,
+          durationUnit,
+          expiresAt 
+        })
         
         const currentSurvey = await getSurvey(surveyId)
         const existingQuestions = currentSurvey.questions || []
@@ -404,6 +435,102 @@ export default function SurveyEditor() {
             rows={2}
             className="w-full resize-none border-0 bg-transparent text-gray-600 placeholder-gray-400 focus:outline-none focus:ring-0"
           />
+
+          {/* Duration Section */}
+          <div className="mt-6 border-t border-gray-200 pt-6">
+            <label className="mb-3 flex items-center gap-2 text-sm font-medium text-gray-700">
+              <svg className="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Duración de la encuesta
+            </label>
+            <p className="mb-4 text-sm text-gray-500">
+              Define cuánto tiempo estará disponible la encuesta para recibir respuestas
+            </p>
+            
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+              {/* Duration Value Input */}
+              <div className="flex-1">
+                <label className="mb-2 block text-xs font-medium text-gray-600">Cantidad</label>
+                <input
+                  type="number"
+                  min="1"
+                  placeholder="Ej: 7"
+                  value={durationValue || ''}
+                  onChange={(e) => {
+                    const val = e.target.value ? parseInt(e.target.value) : null
+                    setDuration(val, durationUnit === 'none' ? 'days' : durationUnit)
+                  }}
+                  disabled={durationUnit === 'none'}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-red-600 focus:outline-none focus:ring-2 focus:ring-red-600/20 disabled:cursor-not-allowed disabled:bg-gray-100"
+                />
+              </div>
+
+              {/* Duration Unit Select */}
+              <div className="flex-1">
+                <label className="mb-2 block text-xs font-medium text-gray-600">Unidad</label>
+                <select
+                  value={durationUnit}
+                  onChange={(e) => {
+                    const unit = e.target.value as 'minutes' | 'hours' | 'days' | 'none'
+                    if (unit === 'none') {
+                      setDuration(null, 'none')
+                    } else {
+                      setDuration(durationValue || 1, unit)
+                    }
+                  }}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-red-600 focus:outline-none focus:ring-2 focus:ring-red-600/20"
+                >
+                  <option value="none">Sin duración</option>
+                  <option value="minutes">Minutos</option>
+                  <option value="hours">Horas</option>
+                  <option value="days">Días</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Expiry Date Preview */}
+            {durationUnit !== 'none' && durationValue && durationValue > 0 && (
+              <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-3">
+                <div className="flex items-start gap-2">
+                  <svg className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-blue-900">
+                      La encuesta expirará el:
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-blue-700">
+                      {(() => {
+                        const now = new Date()
+                        const milliseconds = durationValue * (
+                          durationUnit === 'minutes' ? 60 * 1000 :
+                          durationUnit === 'hours' ? 60 * 60 * 1000 :
+                          24 * 60 * 60 * 1000
+                        )
+                        const expiryDate = new Date(now.getTime() + milliseconds)
+                        return expiryDate.toLocaleString('es-ES', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })
+                      })()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {durationUnit === 'none' && (
+              <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                <p className="text-xs text-gray-600">
+                  ✨ La encuesta estará disponible indefinidamente hasta que la cierres manualmente
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Questions */}

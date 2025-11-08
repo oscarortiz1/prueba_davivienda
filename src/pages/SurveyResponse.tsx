@@ -63,6 +63,17 @@ export default function SurveyResponse() {
     try {
       const data = await getPublicSurvey(surveyId)
       if (data) {
+        if (data.expiresAt) {
+          const expiryDate = new Date(data.expiresAt)
+          const now = new Date()
+          
+          if (expiryDate < now) {
+            showToast('Esta encuesta ha expirado y ya no acepta respuestas', 'warning')
+            navigate('/')
+            return
+          }
+        }
+        
         const normalizedQuestions = data.questions.map((q: any) => ({
           ...q,
           type: q.type.toLowerCase().replace(/_/g, '-')

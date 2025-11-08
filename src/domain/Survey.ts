@@ -18,6 +18,9 @@ export interface Survey {
   createdAt: Date
   updatedAt: Date
   isPublished: boolean
+  durationValue?: number | null
+  durationUnit?: 'minutes' | 'hours' | 'days' | 'none'
+  expiresAt?: Date | null
   questions: Question[]
 }
 

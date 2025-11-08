@@ -19,14 +19,20 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.17",
     "@tailwindcss/vite": "^4.1.17",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@types/react-router-dom": "^5.3.3",
     "@vitejs/plugin-react": "^5.1.0",
+    "@vitest/ui": "^4.0.8",
     "autoprefixer": "^10.4.21",
+    "jsdom": "^27.1.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.17",
     "typescript": "^5.9.3",
-    "vite": "^7.2.1"
+    "vite": "^7.2.1",
+    "vitest": "^4.0.8"
   }
 }

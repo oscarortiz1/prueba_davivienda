@@ -7,6 +7,7 @@ interface EditorState {
   questions: Question[]
   durationValue: number | null
   durationUnit: 'minutes' | 'hours' | 'days' | 'none'
+  expiresAt: Date | null
   loading: boolean
   saving: boolean
   publishing: boolean
@@ -44,6 +45,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   questions: [],
   durationValue: null,
   durationUnit: 'none',
+  expiresAt: null,
   loading: false,
   saving: false,
   publishing: false,
@@ -74,6 +76,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   loadSurveyData: (title, description, questions, isPublished, durationValue, durationUnit, expiresAt) => {
     const finalDurationValue = durationValue !== undefined && durationValue !== null ? durationValue : null
     const finalDurationUnit = durationUnit || 'none'
+    const finalExpiresAt = expiresAt ? new Date(expiresAt) : null
     
     set({ 
       title, 
@@ -82,6 +85,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       isPublished,
       durationValue: finalDurationValue,
       durationUnit: finalDurationUnit,
+      expiresAt: finalExpiresAt,
       hasUnsavedChanges: false 
     })
   },
@@ -116,6 +120,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     questions: [],
     durationValue: null,
     durationUnit: 'none',
+    expiresAt: null,
     loading: false, 
     saving: false,
     publishing: false,

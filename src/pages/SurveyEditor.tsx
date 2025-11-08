@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useSurveyStore } from '../stores/surveyStore'
@@ -11,6 +11,7 @@ export default function SurveyEditor() {
   const params = useParams<{ id: string }>()
   const id = params.id || 'new'
   const navigate = useNavigate()
+  const [isEditingExpiration, setIsEditingExpiration] = useState(false)
   const user = useAuthStore((state) => state.user)
   const createSurvey = useSurveyStore((state) => state.createSurvey)
   const getSurvey = useSurveyStore((state) => state.getSurvey)
@@ -26,6 +27,7 @@ export default function SurveyEditor() {
   const questions = useEditorStore((state) => state.questions)
   const durationValue = useEditorStore((state) => state.durationValue)
   const durationUnit = useEditorStore((state) => state.durationUnit)
+  const expiresAt = useEditorStore((state) => state.expiresAt)
   const loading = useEditorStore((state) => state.loading)
   const saving = useEditorStore((state) => state.saving)
   const publishing = useEditorStore((state) => state.publishing)
@@ -34,14 +36,12 @@ export default function SurveyEditor() {
   const isPublished = useEditorStore((state) => state.isPublished)
   const setTitle = useEditorStore((state) => state.setTitle)
   const setDescription = useEditorStore((state) => state.setDescription)
-  const setQuestions = useEditorStore((state) => state.setQuestions)
   const setDuration = useEditorStore((state) => state.setDuration)
   const setLoading = useEditorStore((state) => state.setLoading)
   const setSaving = useEditorStore((state) => state.setSaving)
   const setPublishing = useEditorStore((state) => state.setPublishing)
   const setCurrentSurveyId = useEditorStore((state) => state.setCurrentSurveyId)
   const setHasUnsavedChanges = useEditorStore((state) => state.setHasUnsavedChanges)
-  const setIsPublished = useEditorStore((state) => state.setIsPublished)
   const loadSurveyData = useEditorStore((state) => state.loadSurveyData)
   const handleAddQuestion = useEditorStore((state) => state.addQuestion)
   const handleUpdateQuestion = useEditorStore((state) => state.updateQuestion)
@@ -200,9 +200,18 @@ export default function SurveyEditor() {
             ...q,
             type: q.type.toLowerCase().replace(/_/g, '-') as QuestionType
           }))
-          setQuestions(normalizedQuestions)
+          loadSurveyData(
+            savedSurvey.title,
+            savedSurvey.description,
+            normalizedQuestions,
+            savedSurvey.isPublished,
+            savedSurvey.durationValue,
+            savedSurvey.durationUnit as 'minutes' | 'hours' | 'days' | 'none' | undefined,
+            savedSurvey.expiresAt
+          )
+        } else {
+          setHasUnsavedChanges(false)
         }
-        setHasUnsavedChanges(false)
       } else if ((id && id !== 'new') || currentSurveyId) {
         const surveyId = currentSurveyId || id
         await updateSurvey(surveyId, { 
@@ -252,11 +261,21 @@ export default function SurveyEditor() {
             ...q,
             type: q.type.toLowerCase().replace(/_/g, '-') as QuestionType
           }))
-          setQuestions(normalizedQuestions)
+          loadSurveyData(
+            updatedSurvey.title,
+            updatedSurvey.description,
+            normalizedQuestions,
+            updatedSurvey.isPublished,
+            updatedSurvey.durationValue,
+            updatedSurvey.durationUnit as 'minutes' | 'hours' | 'days' | 'none' | undefined,
+            updatedSurvey.expiresAt
+          )
+        } else {
+          setHasUnsavedChanges(false)
         }
-        
-        setHasUnsavedChanges(false)
       }
+
+      setIsEditingExpiration(false)
     } catch (error: any) {
       showToast('Error al guardar: ' + (error.response?.data?.message || error.message), 'error')
     } finally {
@@ -425,15 +444,56 @@ export default function SurveyEditor() {
 
           {/* Duration Section */}
           <div className="mt-6 border-t border-gray-200 pt-6">
-            <label className="mb-3 flex items-center gap-2 text-sm font-medium text-gray-700">
-              <svg className="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Duración de la encuesta
+            <label className="mb-3 flex items-center justify-between text-sm font-medium text-gray-700">
+              <div className="flex items-center gap-2">
+                <svg className="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Duración de la encuesta
+              </div>
+              {expiresAt && isPublished && !isEditingExpiration && (
+                <button
+                  onClick={() => setIsEditingExpiration(true)}
+                  className="flex items-center gap-1 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition-colors"
+                >
+                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  Cambiar fecha
+                </button>
+              )}
+              {isEditingExpiration && (
+                <button
+                  onClick={() => setIsEditingExpiration(false)}
+                  className="flex items-center gap-1 rounded-md bg-gray-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-700 transition-colors"
+                >
+                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Cancelar
+                </button>
+              )}
             </label>
-            <p className="mb-4 text-sm text-gray-500">
-              Define cuánto tiempo estará disponible la encuesta para recibir respuestas
-            </p>
+            {expiresAt && isPublished && !isEditingExpiration ? (
+              <div className="mb-4 rounded-lg border-l-4 border-purple-500 bg-purple-50 px-4 py-3">
+                <p className="text-sm font-semibold text-purple-900">
+                  ⏰ Actualmente expira el:
+                </p>
+                <p className="mt-1 text-lg font-bold text-purple-700">
+                  {new Date(expiresAt).toLocaleDateString('es-ES', { 
+                    day: 'numeric', 
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                  })}
+                </p>
+              </div>
+            ) : (
+              <p className="mb-4 text-sm text-gray-500">
+                Define cuánto tiempo estará disponible la encuesta para recibir respuestas
+              </p>
+            )}
             
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
               {/* Duration Value Input */}
@@ -448,7 +508,7 @@ export default function SurveyEditor() {
                     const val = e.target.value ? parseInt(e.target.value) : null
                     setDuration(val, durationUnit === 'none' ? 'days' : durationUnit)
                   }}
-                  disabled={durationUnit === 'none'}
+                  disabled={durationUnit === 'none' || (isPublished && !!expiresAt && !isEditingExpiration)}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-red-600 focus:outline-none focus:ring-2 focus:ring-red-600/20 disabled:cursor-not-allowed disabled:bg-gray-100"
                 />
               </div>
@@ -466,7 +526,8 @@ export default function SurveyEditor() {
                       setDuration(durationValue || 1, unit)
                     }
                   }}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-red-600 focus:outline-none focus:ring-2 focus:ring-red-600/20"
+                  disabled={isPublished && !!expiresAt && !isEditingExpiration}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-red-600 focus:outline-none focus:ring-2 focus:ring-red-600/20 disabled:cursor-not-allowed disabled:bg-gray-100"
                 >
                   <option value="none">Sin duración</option>
                   <option value="minutes">Minutos</option>
@@ -477,7 +538,58 @@ export default function SurveyEditor() {
             </div>
 
             {/* Expiry Date Preview */}
-            {durationUnit !== 'none' && durationValue && durationValue > 0 && (
+            {isPublished && expiresAt && !hasUnsavedChanges && (
+              <div className="mt-4 rounded-lg border border-slate-300 bg-slate-100 p-3">
+                <div className="flex items-start gap-2">
+                  <svg className="h-4 w-4 text-slate-700 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-slate-800">
+                      Encuesta publicada - Expira el:
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900">
+                      {new Date(expiresAt).toLocaleString('es-ES', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Warning when modifying duration on published survey */}
+            {isPublished && expiresAt && hasUnsavedChanges && durationUnit !== 'none' && (
+              <div className="mt-4 rounded-lg border border-orange-200 bg-orange-50 p-3">
+                <div className="flex items-start gap-2">
+                  <svg className="h-4 w-4 text-orange-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-orange-900">
+                      ⚠️ Al guardar, la fecha de expiración se recalculará
+                    </p>
+                    <p className="mt-1 text-xs text-orange-700">
+                      Nueva expiración: {durationValue} {durationUnit === 'minutes' ? 'minutos' : durationUnit === 'hours' ? 'horas' : 'días'} desde ahora
+                    </p>
+                    <p className="mt-2 text-xs font-semibold text-orange-800">
+                      Fecha actual de expiración: {new Date(expiresAt).toLocaleString('es-ES', {
+                        day: 'numeric',
+                        month: 'short',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {!isPublished && durationUnit !== 'none' && durationValue && durationValue > 0 && (
               <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-3">
                 <div className="flex items-start gap-2">
                   <svg className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -485,25 +597,10 @@ export default function SurveyEditor() {
                   </svg>
                   <div className="flex-1">
                     <p className="text-xs font-medium text-blue-900">
-                      La encuesta expirará el:
+                      Cuando se publique, la encuesta expirará en:
                     </p>
                     <p className="mt-1 text-sm font-semibold text-blue-700">
-                      {(() => {
-                        const now = new Date()
-                        const milliseconds = durationValue * (
-                          durationUnit === 'minutes' ? 60 * 1000 :
-                          durationUnit === 'hours' ? 60 * 60 * 1000 :
-                          24 * 60 * 60 * 1000
-                        )
-                        const expiryDate = new Date(now.getTime() + milliseconds)
-                        return expiryDate.toLocaleString('es-ES', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })
-                      })()}
+                      {durationValue} {durationUnit === 'minutes' ? 'minutos' : durationUnit === 'hours' ? 'horas' : 'días'}
                     </p>
                   </div>
                 </div>

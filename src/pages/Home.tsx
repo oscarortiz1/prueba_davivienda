@@ -44,6 +44,11 @@ export default function HomePage() {
   const mySurveys = surveys.filter(s => s.createdBy === user?.id)
   const otherPublishedSurveys = publishedSurveys.filter(s => s.createdBy !== user?.id)
 
+  const isExpired = (expiresAt: Date | null | undefined): boolean => {
+    if (!expiresAt) return false
+    return new Date(expiresAt).getTime() < new Date().getTime()
+  }
+
   const handleCopyLink = (surveyId: string) => {
     const link = `${window.location.origin}/survey/${surveyId}/respond`
     navigator.clipboard.writeText(link)
@@ -136,13 +141,31 @@ export default function HomePage() {
               >
                 <div className="mb-4">
                   <div className="mb-2 flex items-center justify-between">
-                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                      survey.isPublished 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {survey.isPublished ? '● Publicada' : '○ Borrador'}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                        survey.isPublished 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {survey.isPublished ? '● Publicada' : '○ Borrador'}
+                      </span>
+                      {survey.isPublished && survey.expiresAt && isExpired(survey.expiresAt) && (
+                        <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-800">
+                          <svg className="mr-1 h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Expirada
+                        </span>
+                      )}
+                      {survey.isPublished && survey.expiresAt && !isExpired(survey.expiresAt) && (
+                        <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-800">
+                          <svg className="mr-1 h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Activa
+                        </span>
+                      )}
+                    </div>
                     <button
                       onClick={() => setDeleteConfirm(survey.id)}
                       className="rounded p-1 text-gray-400 opacity-0 transition-opacity hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
@@ -183,6 +206,27 @@ export default function HomePage() {
                     {new Date(survey.updatedAt).toLocaleDateString()}
                   </span>
                 </div>
+
+                {/* Expiration info */}
+                {survey.isPublished && survey.expiresAt && (
+                  <div className={`mb-3 rounded-lg border px-3 py-2 text-xs ${
+                    isExpired(survey.expiresAt)
+                      ? 'border-red-200 bg-red-50 text-red-800'
+                      : 'border-blue-200 bg-blue-50 text-blue-800'
+                  }`}>
+                    <div className="flex items-center gap-2">
+                      <svg className="h-3.5 w-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="font-medium">
+                        {isExpired(survey.expiresAt)
+                          ? `Expiró: ${new Date(survey.expiresAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`
+                          : `Expira: ${new Date(survey.expiresAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`
+                        }
+                      </span>
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <Button
@@ -254,11 +298,20 @@ export default function HomePage() {
                   key={survey.id}
                   className="group relative rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-all hover:shadow-md"
                 >
-                  <div className="mb-4">
-                    <div className="mb-2 flex items-center justify-between">
+                <div className="mb-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800">
                         ● Publicada
                       </span>
+                      {survey.expiresAt && isExpired(survey.expiresAt) && (
+                        <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-800">
+                          <svg className="mr-1 h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Expirada
+                        </span>
+                      )}
                       {respondedSurveys.has(survey.id) && (
                         <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-800">
                           <svg className="mr-1 h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -268,6 +321,7 @@ export default function HomePage() {
                         </span>
                       )}
                     </div>
+                  </div>
                     <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">{survey.title}</h3>
                     <p className="mt-1 text-sm text-gray-600 line-clamp-2">{survey.description}</p>
                   </div>
@@ -287,12 +341,37 @@ export default function HomePage() {
                     </span>
                   </div>
 
+                  {/* Expiration info */}
+                  {survey.expiresAt && (
+                    <div className={`mb-3 rounded-lg border px-3 py-2 text-xs ${
+                      isExpired(survey.expiresAt)
+                        ? 'border-red-200 bg-red-50 text-red-800'
+                        : 'border-blue-200 bg-blue-50 text-blue-800'
+                    }`}>
+                      <div className="flex items-center gap-2">
+                        <svg className="h-3.5 w-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="font-medium">
+                          {isExpired(survey.expiresAt)
+                            ? `Expiró: ${new Date(survey.expiresAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`
+                            : `Expira: ${new Date(survey.expiresAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`
+                          }
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
                   <Button
                     onClick={() => navigate(`/survey/${survey.id}/respond`)}
                     className="w-full justify-center text-sm"
-                    disabled={respondedSurveys.has(survey.id)}
+                    disabled={respondedSurveys.has(survey.id) || Boolean(survey.expiresAt && isExpired(survey.expiresAt))}
                   >
-                    {respondedSurveys.has(survey.id) ? 'Ya respondida' : 'Responder encuesta'}
+                    {respondedSurveys.has(survey.id) 
+                      ? 'Ya respondida' 
+                      : (survey.expiresAt && isExpired(survey.expiresAt))
+                        ? 'Encuesta expirada'
+                        : 'Responder encuesta'}
                   </Button>
                 </div>
               ))}

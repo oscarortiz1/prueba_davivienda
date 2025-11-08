@@ -6,6 +6,7 @@ import { useToastStore } from '../stores/toastStore'
 import { useResponseStore } from '../stores/responseStore'
 import Button from '../ui/components/Button'
 import { useEffect } from 'react'
+import { getErrorMessage } from '../utils/errorUtils'
 
 export default function HomePage() {
   const user = useAuthStore((state) => state.user)
@@ -61,7 +62,7 @@ export default function HomePage() {
       setDeleteConfirm(null)
       showToast('Encuesta eliminada exitosamente', 'success')
     } catch (error: any) {
-      showToast('Error al eliminar: ' + (error.response?.data?.message || error.message), 'error')
+      showToast(getErrorMessage(error), 'error')
     }
   }
 

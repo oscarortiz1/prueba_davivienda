@@ -7,6 +7,7 @@ import { useToastStore } from '../stores/toastStore'
 import { Question } from '../domain/Survey'
 import Button from '../ui/components/Button'
 import Input from '../ui/components/Input'
+import { getErrorMessage, isValidationError } from '../utils/errorUtils'
 
 export default function SurveyResponse() {
   const params = useParams<{ id: string }>()
@@ -219,7 +220,22 @@ export default function SurveyResponse() {
         navigate('/')
       }, 2000)
     } catch (error: any) {
-      showToast('Error al enviar respuesta: ' + (error.response?.data?.message || error.message), 'error')
+      console.error('Error al enviar respuesta:', error)
+      
+      const errorMessage = getErrorMessage(error)
+      
+      if (isValidationError(error)) {
+        const lines = errorMessage.split('\n')
+        showToast(lines[0], 'error')
+        
+        if (lines.length > 1) {
+          setTimeout(() => {
+            showToast(lines.slice(1).join('\n'), 'warning')
+          }, 500)
+        }
+      } else {
+        showToast(errorMessage, 'error')
+      }
     } finally {
       setSubmitting(false)
     }

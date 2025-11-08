@@ -80,17 +80,29 @@ export const useResponseStore = create<ResponseState>((set, get) => ({
   submitResponse: async (surveyId) => {
     const { answers, respondentEmail } = get()
     
+    if (!respondentEmail || !respondentEmail.trim()) {
+      throw new Error('El correo electrónico es requerido')
+    }
+    
+    if (Object.keys(answers).length === 0) {
+      throw new Error('Debes responder al menos una pregunta')
+    }
+    
     const formattedAnswers = Object.entries(answers).map(([questionId, value]) => ({
       questionId,
       value: Array.isArray(value) ? value : [value]
     }))
 
-    await axios.post(`${API_URL}/surveys/${surveyId}/responses`, {
-      respondentEmail,
-      answers: formattedAnswers
-    })
-    
-    set({ hasResponded: true })
+    try {
+      await axios.post(`${API_URL}/surveys/${surveyId}/responses`, {
+        respondentEmail,
+        answers: formattedAnswers
+      })
+      
+      set({ hasResponded: true })
+    } catch (error) {
+      throw error
+    }
   },
 
   reset: () => set({ answers: {}, respondentEmail: '', submitting: false, survey: null, loading: true, hasResponded: false })

@@ -7,6 +7,7 @@ import { useToastStore } from '../stores/toastStore'
 import { QuestionType, Question } from '../domain/Survey'
 import Button from '../ui/components/Button'
 import ImageUpload from '../ui/components/ImageUpload'
+import { getErrorMessage } from '../utils/errorUtils'
 
 export default function SurveyEditor() {
   const params = useParams<{ id: string }>()
@@ -87,7 +88,7 @@ export default function SurveyEditor() {
         )
       }
     } catch (error: any) {
-      showToast('Error al cargar la encuesta: ' + (error.response?.data?.message || error.message), 'error')
+      showToast(getErrorMessage(error), 'error')
       navigate('/')
     } finally {
       setLoading(false)
@@ -281,7 +282,7 @@ export default function SurveyEditor() {
 
       setIsEditingExpiration(false)
     } catch (error: any) {
-      showToast('Error al guardar: ' + (error.response?.data?.message || error.message), 'error')
+      showToast(getErrorMessage(error), 'error')
     } finally {
       setSaving(false)
     }
@@ -316,7 +317,7 @@ export default function SurveyEditor() {
       showToast('Encuesta publicada exitosamente. Ahora otros usuarios podrán verla en el home.', 'success')
       navigate('/')
     } catch (error: any) {
-      showToast('Error al publicar: ' + (error.response?.data?.message || error.message), 'error')
+      showToast(getErrorMessage(error), 'error')
     } finally {
       setPublishing(false)
     }

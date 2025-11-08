@@ -47,12 +47,14 @@ export default function Toast({ message, type, onClose, duration = 4000 }: Toast
   }
 
   return (
-    <div className={`flex items-center gap-3 rounded-lg border px-4 py-3 shadow-lg backdrop-blur-sm animate-slide-in ${typeStyles[type]}`}>
-      {icons[type]}
-      <p className="text-sm font-medium">{message}</p>
+    <div className={`flex items-start gap-3 rounded-lg border px-4 py-3 shadow-lg backdrop-blur-sm animate-slide-in ${typeStyles[type]} max-w-md`}>
+      <div className="flex-shrink-0">
+        {icons[type]}
+      </div>
+      <p className="text-sm font-medium whitespace-pre-line flex-1">{message}</p>
       <button
         onClick={onClose}
-        className="ml-4 text-gray-500 hover:text-gray-700"
+        className="ml-2 flex-shrink-0 text-gray-500 hover:text-gray-700"
       >
         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

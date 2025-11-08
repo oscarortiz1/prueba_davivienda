@@ -18,35 +18,63 @@ Aplicación web de gestión de encuestas desarrollada con React, TypeScript, Vit
 - npm o yarn
 - Backend de Spring Boot ejecutándose (ver repositorio `prueba_davivienda_backend`)
 
-## 🔧 Instalación
+## ⚙️ Configuración e Instalación
 
-1. Clonar el repositorio:
+### Requisitos Previos
+
+- **Node.js 18** o superior ([Download](https://nodejs.org/))
+- **npm** o **yarn**
+- **Backend** ejecutándose en `http://localhost:8080` (ver [prueba_davivienda_backend](../prueba_davivienda_backend))
+
+### 1. Clonar el Repositorio
+
 ```bash
-git clone <repo-url>
+git clone https://github.com/oscarortiz1/prueba_davivienda.git
 cd prueba_davivienda
 ```
 
-2. Instalar dependencias:
+### 2. Instalar Dependencias
+
 ```bash
 npm install
+# o con yarn
+yarn install
 ```
 
-3. Configurar variables de entorno:
+### 3. Configurar Variables de Entorno
+
+Crea un archivo `.env` en la raíz del proyecto:
+
 ```bash
+# Copiar archivo de ejemplo
 cp .env.example .env
 ```
 
 Editar `.env` con la URL de tu backend:
+
 ```env
 VITE_API_URL=http://localhost:8080/api
+VITE_FIREBASE_API_KEY=tu_api_key
+VITE_FIREBASE_AUTH_DOMAIN=tu_proyecto.firebaseapp.com
+VITE_FIREBASE_DATABASE_URL=https://tu_proyecto.firebaseio.com
+VITE_FIREBASE_PROJECT_ID=tu_proyecto_id
 ```
 
-4. Iniciar el servidor de desarrollo:
+### 4. Iniciar el Servidor de Desarrollo
+
 ```bash
 npm run dev
 ```
 
-La aplicación estará disponible en `http://localhost:5173`
+La aplicación estará disponible en: **http://localhost:5173**
+
+### 5. Compilar para Producción
+
+```bash
+npm run build
+```
+
+Los archivos compilados estarán en la carpeta `dist/`
 
 ## 🏗️ Arquitectura
 
@@ -161,7 +189,103 @@ npm run lint         # Ejecutar linter
    - Eliminar encuestas
    - Publicar/despublicar
 
-## 📝 Notas de Desarrollo
+## � Documentación API (Swagger/OpenAPI)
+
+El backend incluye **Swagger UI** para documentación interactiva de la API.
+
+### 🔗 Acceder a Swagger
+
+Con el backend ejecutándose, abre tu navegador en:
+
+**http://localhost:8080/swagger-ui.html**
+
+### ✨ Características de Swagger
+
+- **🔍 Exploración Interactiva**: Ve todos los endpoints disponibles organizados por categorías
+- **🧪 Pruebas en Vivo**: Ejecuta peticiones directamente desde el navegador
+- **📋 Esquemas de Datos**: Ve la estructura exacta de requests y responses
+- **🔐 Autenticación JWT**: Botón "Authorize" para probar endpoints protegidos
+- **📝 Ejemplos**: Payloads de ejemplo para cada endpoint
+- **💡 Descripciones**: Documentación detallada de cada parámetro
+
+### 🚀 Cómo usar Swagger para probar la API
+
+#### 1. Abrir Swagger UI
+```
+http://localhost:8080/swagger-ui.html
+```
+
+#### 2. Registrar un usuario (si no tienes uno)
+- Expande **`auth-controller`** → **`POST /auth/register`**
+- Click en **"Try it out"**
+- Edita el body JSON:
+  ```json
+  {
+    "name": "Test User",
+    "email": "test@example.com",
+    "password": "password123"
+  }
+  ```
+- Click en **"Execute"**
+- Copia el **`token`** de la respuesta
+
+#### 3. Autenticar en Swagger
+- Click en el botón **"Authorize"** 🔓 (candado verde arriba a la derecha)
+- Pega tu token JWT en el campo de valor (sin escribir "Bearer", solo el token)
+- Click en **"Authorize"** y luego **"Close"**
+- Ahora el candado debe aparecer cerrado 🔒
+
+#### 4. Probar cualquier endpoint
+- Ahora todos los endpoints protegidos incluirán automáticamente tu token
+- Expande cualquier endpoint (por ejemplo: `GET /surveys/my-surveys`)
+- Click en **"Try it out"**
+- Modifica los parámetros si es necesario
+- Click en **"Execute"**
+- Ve la respuesta en tiempo real con:
+  - Código de estado HTTP
+  - Headers de respuesta
+  - Body de respuesta formateado
+  - Tiempo de respuesta
+
+### 📄 Endpoints Swagger Adicionales
+
+Además de la interfaz web, puedes obtener la especificación OpenAPI en diferentes formatos:
+
+- **OpenAPI JSON**: `http://localhost:8080/v3/api-docs`
+- **OpenAPI YAML**: `http://localhost:8080/v3/api-docs.yaml`
+
+Estos archivos pueden usarse para:
+- 📥 Importar en **Postman** o **Insomnia**
+- 🛠️ Generar clientes automáticos en diferentes lenguajes
+- 🧪 Integración con herramientas de testing
+- 📖 Generar documentación estática
+
+### 💡 Ejemplo de uso completo
+
+```bash
+# 1. Asegúrate de que el backend esté corriendo
+# En el directorio del backend:
+cd prueba_davivienda_backend
+mvn spring-boot:run
+
+# 2. Abre Swagger en tu navegador
+# http://localhost:8080/swagger-ui.html
+
+# 3. Obtén un token:
+#    POST /auth/login
+#    Body: { "email": "user@example.com", "password": "password123" }
+
+# 4. Autoriza con el token en el botón "Authorize"
+
+# 5. Prueba crear una encuesta:
+#    POST /surveys
+#    Body: { "title": "Mi encuesta", "description": "Descripción" }
+
+# 6. Agregar preguntas:
+#    POST /surveys/{surveyId}/questions
+```
+
+## �📝 Notas de Desarrollo
 
 - El token JWT se renueva automáticamente en cada petición exitosa
 - Las encuestas se crean sin preguntas inicialmente, estas se agregan después
@@ -181,6 +305,12 @@ npm run lint         # Ejecutar linter
 **Backend no responde:**
 - Verificar que Spring Boot esté ejecutándose en puerto 8080
 - Verificar la URL en archivo `.env`
+
+**Swagger no carga:**
+- Verificar que el backend esté ejecutándose
+- Acceder a http://localhost:8080/swagger-ui.html (con `/swagger-ui.html` al final)
+- Revisar la consola del backend por errores
+- Verificar que la dependencia `springdoc-openapi-starter-webmvc-ui` esté en el pom.xml
 
 ## 🔗 Repositorios Relacionados
 

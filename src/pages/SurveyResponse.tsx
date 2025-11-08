@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useSurveyStore } from '../stores/surveyStore'
@@ -31,6 +31,9 @@ export default function SurveyResponse() {
   const submitResponse = useResponseStore((state) => state.submitResponse)
   const reset = useResponseStore((state) => state.reset)
   const pollingIntervalRef = useRef<number | null>(null)
+  const expirationCheckRef = useRef<number | null>(null)
+  
+  const [timeRemaining, setTimeRemaining] = useState<string>('')
 
   useEffect(() => {
     loadSurvey()
@@ -50,6 +53,59 @@ export default function SurveyResponse() {
       }
     }
   }, [survey, hasResponded])
+
+  useEffect(() => {
+    if (survey?.expiresAt && !hasResponded) {
+      const checkExpiration = () => {
+        const expiryDate = new Date(survey.expiresAt!)
+        const now = new Date()
+        const diffMs = expiryDate.getTime() - now.getTime()
+        
+        if (diffMs <= 0) {
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current)
+          }
+          if (expirationCheckRef.current) {
+            clearInterval(expirationCheckRef.current)
+          }
+          
+          setTimeRemaining('¡Encuesta expirada!')
+          showToast('Esta encuesta ha expirado y ya no acepta respuestas', 'warning')
+          setTimeout(() => {
+            navigate('/')
+          }, 2000)
+        } else {
+          const days = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+          const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+          const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
+          const seconds = Math.floor((diffMs % (1000 * 60)) / 1000)
+          
+          let timeString = ''
+          if (days > 0) {
+            timeString = `${days}d ${hours}h ${minutes}m`
+          } else if (hours > 0) {
+            timeString = `${hours}h ${minutes}m ${seconds}s`
+          } else if (minutes > 0) {
+            timeString = `${minutes}m ${seconds}s`
+          } else {
+            timeString = `${seconds}s`
+          }
+          
+          setTimeRemaining(timeString)
+        }
+      }
+      
+      expirationCheckRef.current = window.setInterval(checkExpiration, 1000)
+      
+      checkExpiration()
+    }
+
+    return () => {
+      if (expirationCheckRef.current) {
+        clearInterval(expirationCheckRef.current)
+      }
+    }
+  }, [survey, hasResponded, navigate, showToast])
 
   useEffect(() => {
     if (user?.email) {
@@ -243,6 +299,21 @@ export default function SurveyResponse() {
       </header>
 
       <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
+        {/* Contador regresivo */}
+        {timeRemaining && survey.expiresAt && (
+          <div className="mb-6 rounded-xl border border-orange-200 bg-orange-50 p-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <svg className="h-6 w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <p className="text-sm font-medium text-orange-900">Tiempo restante para responder</p>
+                <p className="text-2xl font-bold text-orange-600">{timeRemaining}</p>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <div className="mb-8 rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
           <h1 className="text-3xl font-bold text-gray-900">{survey.title}</h1>
           {survey.description && (

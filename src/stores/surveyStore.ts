@@ -18,7 +18,6 @@ interface SurveyState {
     description: string
     durationValue?: number | null
     durationUnit?: string
-    expiresAt?: Date | null 
   }) => Promise<Survey>
   getSurvey: (id: string) => Promise<Survey>
   getPublicSurvey: (id: string) => Promise<Survey>
@@ -27,7 +26,6 @@ interface SurveyState {
     description: string
     durationValue?: number | null
     durationUnit?: string
-    expiresAt?: Date | null 
   }) => Promise<Survey>
   deleteSurvey: (id: string) => Promise<void>
   publishSurvey: (id: string) => Promise<Survey>
@@ -69,12 +67,7 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
   },
 
   createSurvey: async (data) => {
-    const payload = {
-      ...data,
-      expiresAt: data.expiresAt ? data.expiresAt.toISOString() : null
-    }
-    
-    const response = await axios.post(`${API_URL}/surveys`, payload)
+    const response = await axios.post(`${API_URL}/surveys`, data)
     await get().refreshSurveys()
     return response.data
   },
@@ -94,12 +87,7 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
       throw new Error('Debes guardar la encuesta antes de actualizarla')
     }
     
-    const payload = {
-      ...data,
-      expiresAt: data.expiresAt ? data.expiresAt.toISOString() : null
-    }
-    
-    const response = await axios.put(`${API_URL}/surveys/${id}`, payload)
+    const response = await axios.put(`${API_URL}/surveys/${id}`, data)
     await get().refreshSurveys()
     return response.data
   },

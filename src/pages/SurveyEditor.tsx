@@ -168,17 +168,6 @@ export default function SurveyEditor() {
       return
     }
 
-    let expiresAt: Date | null = null
-    if (durationUnit !== 'none' && durationValue && durationValue > 0) {
-      const now = new Date()
-      const milliseconds = durationValue * (
-        durationUnit === 'minutes' ? 60 * 1000 :
-        durationUnit === 'hours' ? 60 * 60 * 1000 :
-        24 * 60 * 60 * 1000  
-      )
-      expiresAt = new Date(now.getTime() + milliseconds)
-    }
-    
     setSaving(true)
     
     try {
@@ -187,8 +176,7 @@ export default function SurveyEditor() {
           title,
           description,
           durationValue,
-          durationUnit,
-          expiresAt
+          durationUnit
         })
       
         for (const q of questions) {
@@ -221,8 +209,7 @@ export default function SurveyEditor() {
           title, 
           description,
           durationValue,
-          durationUnit,
-          expiresAt 
+          durationUnit
         })
         
         const currentSurvey = await getSurvey(surveyId)

@@ -12,6 +12,7 @@ interface SurveyState {
   setPublishedSurveys: (surveys: Survey[]) => void
   setLoading: (loading: boolean) => void
   refreshSurveys: () => Promise<void>
+  refreshSurveysSilent: () => Promise<void>
   refreshPublishedSurveys: () => Promise<void>
   createSurvey: (data: { 
     title: string
@@ -54,6 +55,15 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
       console.error('Error fetching surveys:', error)
     } finally {
       set({ loading: false })
+    }
+  },
+
+  refreshSurveysSilent: async () => {
+    try {
+      const response = await axios.get(`${API_URL}/surveys/my-surveys`)
+      set({ surveys: response.data })
+    } catch (error) {
+      console.error('Error fetching surveys:', error)
     }
   },
 

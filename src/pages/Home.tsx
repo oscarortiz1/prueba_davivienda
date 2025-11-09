@@ -16,6 +16,7 @@ export default function HomePage() {
   const loading = useSurveyStore((state) => state.loading)
   const deleteSurvey = useSurveyStore((state) => state.deleteSurvey)
   const refreshSurveys = useSurveyStore((state) => state.refreshSurveys)
+  const refreshSurveysSilent = useSurveyStore((state) => state.refreshSurveysSilent)
   const refreshPublishedSurveys = useSurveyStore((state) => state.refreshPublishedSurveys)
   const deleteConfirm = useUIStore((state) => state.deleteConfirmId)
   const setDeleteConfirm = useUIStore((state) => state.setDeleteConfirmId)
@@ -28,12 +29,15 @@ export default function HomePage() {
     refreshSurveys()
     refreshPublishedSurveys()
     
+    // Refresh both my surveys and published surveys every 3 seconds for real-time updates
+    // Use silent refresh to avoid loading indicator flickering
     const interval = setInterval(() => {
+      refreshSurveysSilent()
       refreshPublishedSurveys()
-    }, 5000)
+    }, 3000)
     
     return () => clearInterval(interval)
-  }, [refreshSurveys, refreshPublishedSurveys])
+  }, [refreshSurveys, refreshSurveysSilent, refreshPublishedSurveys])
 
   useEffect(() => {
     if (user?.email && publishedSurveys.length > 0) {

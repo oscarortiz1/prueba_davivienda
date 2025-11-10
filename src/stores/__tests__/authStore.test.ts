@@ -1,94 +1,125 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import axios from 'axios';
 import { useAuthStore } from '../authStore';
 
-// Mock Firebase
-vi.mock('../../config/firebase', () => ({
-  auth: {
-    signInWithEmailAndPassword: vi.fn(),
-    createUserWithEmailAndPassword: vi.fn(),
-    signOut: vi.fn(),
-    onAuthStateChanged: vi.fn(),
-  },
-  database: {
-    ref: vi.fn(),
-    set: vi.fn(),
+vi.mock('axios', () => {
+  const mockAxios = {
+    post: vi.fn(),
     get: vi.fn(),
-  },
-}));
+    defaults: { baseURL: '' },
+    interceptors: { request: { use: vi.fn() } },
+  };
+  return { default: mockAxios };
+});
+
+const mockedAxios = axios as unknown as {
+  post: ReturnType<typeof vi.fn>;
+  get: ReturnType<typeof vi.fn>;
+};
 
 describe('authStore', () => {
   beforeEach(() => {
-    // Reset store state before each test
-    const store = useAuthStore.getState();
-    store.user = null;
-    store.isAuthenticated = false;
-    store.isLoading = false;
-    store.error = null;
+    vi.clearAllMocks();
+    localStorage.clear();
+    useAuthStore.setState({
+      user: null,
+      loading: true,
+      token: null,
+    });
   });
 
-  it('should initialize with default state', () => {
-    const store = useAuthStore.getState();
-    
-    expect(store.user).toBeNull();
-    expect(store.isAuthenticated).toBe(false);
-    expect(store.isLoading).toBe(false);
-    expect(store.error).toBeNull();
+  it('initializes with default state values', () => {
+    const state = useAuthStore.getState();
+    expect(state.user).toBeNull();
+    expect(state.loading).toBe(true);
+    expect(state.token).toBeNull();
   });
 
-  it('should set loading state', () => {
-    const store = useAuthStore.getState();
-    
-    store.setLoading(true);
-    expect(store.isLoading).toBe(true);
-    
-    store.setLoading(false);
-    expect(store.isLoading).toBe(false);
+  it('updates loading flag through setLoading', () => {
+    const { setLoading } = useAuthStore.getState();
+    setLoading(false);
+    expect(useAuthStore.getState().loading).toBe(false);
+
+    setLoading(true);
+    expect(useAuthStore.getState().loading).toBe(true);
   });
 
-  it('should set error', () => {
-    const store = useAuthStore.getState();
-    const errorMessage = 'Test error';
-    
-    store.setError(errorMessage);
-    expect(store.error).toBe(errorMessage);
+  it('stores the user via setUser', () => {
+    const mockUser = { id: 'user-123', name: 'Test User', email: 'test@example.com' };
+    useAuthStore.getState().setUser(mockUser);
+    expect(useAuthStore.getState().user).toEqual(mockUser);
   });
 
-  it('should set user', () => {
-    const store = useAuthStore.getState();
-    const mockUser = {
-      id: 'user-123',
+  it('persists the token via setToken', () => {
+    useAuthStore.getState().setToken('token-123');
+    expect(useAuthStore.getState().token).toBe('token-123');
+    expect(localStorage.getItem('token')).toBe('token-123');
+
+    useAuthStore.getState().setToken(null);
+    expect(useAuthStore.getState().token).toBeNull();
+    expect(localStorage.getItem('token')).toBeNull();
+  });
+
+  it('clears user and token on logout', async () => {
+    localStorage.setItem('token', 'token-123');
+    useAuthStore.setState({ user: { id: '1', name: 'User', email: 'user@example.com' }, token: 'token-123' });
+
+    await useAuthStore.getState().logout();
+
+    expect(useAuthStore.getState().user).toBeNull();
+    expect(useAuthStore.getState().token).toBeNull();
+    expect(localStorage.getItem('token')).toBeNull();
+  });
+
+  it('logs in and stores credentials', async () => {
+    mockedAxios.post.mockResolvedValueOnce({
+      data: {
+        token: 'token-abc',
+        userId: 'user-1',
+        name: 'Test User',
+        email: 'test@example.com',
+      },
+    });
+
+    await useAuthStore.getState().login('test@example.com', 'password');
+
+    expect(mockedAxios.post).toHaveBeenCalledWith('/auth/login', {
+      email: 'test@example.com',
+      password: 'password',
+    });
+    expect(useAuthStore.getState().user).toEqual({
+      id: 'user-1',
       name: 'Test User',
       email: 'test@example.com',
-    };
-    
-    store.setUser(mockUser);
-    expect(store.user).toEqual(mockUser);
-    expect(store.isAuthenticated).toBe(true);
+    });
+    expect(useAuthStore.getState().token).toBe('token-abc');
+    expect(localStorage.getItem('token')).toBe('token-abc');
   });
 
-  it('should clear user on logout', () => {
-    const store = useAuthStore.getState();
-    const mockUser = {
-      id: 'user-123',
-      name: 'Test User',
-      email: 'test@example.com',
-    };
-    
-    store.setUser(mockUser);
-    expect(store.isAuthenticated).toBe(true);
-    
-    store.logout();
-    expect(store.user).toBeNull();
-    expect(store.isAuthenticated).toBe(false);
+  it('propagates backend login errors', async () => {
+    mockedAxios.post.mockRejectedValueOnce({
+      response: { data: { message: 'Invalid credentials' } },
+    });
+
+    await expect(useAuthStore.getState().login('fail@example.com', 'wrong')).rejects.toThrow('Invalid credentials');
   });
 
-  it('should clear error', () => {
-    const store = useAuthStore.getState();
-    
-    store.setError('Test error');
-    expect(store.error).toBe('Test error');
-    
-    store.clearError();
-    expect(store.error).toBeNull();
+  it('initializes auth silently when there is no token', async () => {
+    await useAuthStore.getState().initAuth();
+    expect(mockedAxios.get).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().loading).toBe(false);
+  });
+
+  it('loads user info during initAuth when token exists', async () => {
+    const mockUser = { id: 'user-2', name: 'Persisted User', email: 'persisted@example.com' };
+    localStorage.setItem('token', 'persisted-token');
+    useAuthStore.setState({ token: 'persisted-token' });
+    mockedAxios.get.mockResolvedValueOnce({ data: mockUser });
+
+    await useAuthStore.getState().initAuth();
+
+    expect(mockedAxios.get).toHaveBeenCalledWith('/auth/me');
+    expect(useAuthStore.getState().user).toEqual(mockUser);
+    expect(useAuthStore.getState().loading).toBe(false);
   });
 });

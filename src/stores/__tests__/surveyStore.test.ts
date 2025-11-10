@@ -1,152 +1,143 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import axios from 'axios';
 import { useSurveyStore } from '../surveyStore';
+
+vi.mock('axios', () => {
+  const mockAxios = {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
+    defaults: { baseURL: '' },
+    interceptors: { request: { use: vi.fn() } },
+  };
+  return { default: mockAxios };
+});
+
+const mockedAxios = axios as unknown as {
+  get: ReturnType<typeof vi.fn>;
+  post: ReturnType<typeof vi.fn>;
+  put: ReturnType<typeof vi.fn>;
+  delete: ReturnType<typeof vi.fn>;
+};
 
 describe('surveyStore', () => {
   beforeEach(() => {
-    // Reset store state before each test
-    const store = useSurveyStore.getState();
-    store.surveys = [];
-    store.currentSurvey = null;
-    store.isLoading = false;
-    store.error = null;
+    vi.clearAllMocks();
+    useSurveyStore.setState({
+      surveys: [],
+      publishedSurveys: [],
+      loading: false,
+    });
   });
 
-  it('should initialize with default state', () => {
-    const store = useSurveyStore.getState();
-    
-    expect(store.surveys).toEqual([]);
-    expect(store.currentSurvey).toBeNull();
-    expect(store.isLoading).toBe(false);
-    expect(store.error).toBeNull();
+  it('starts with an empty survey collection', () => {
+    const state = useSurveyStore.getState();
+    expect(state.surveys).toEqual([]);
+    expect(state.publishedSurveys).toEqual([]);
+    expect(state.loading).toBe(false);
   });
 
-  it('should set surveys', () => {
-    const store = useSurveyStore.getState();
+  it('allows setting surveys and loading state', () => {
     const mockSurveys = [
-      {
-        id: '1',
-        title: 'Test Survey 1',
-        description: 'Description 1',
-        creatorId: 'user-123',
-        published: false,
-      },
-      {
-        id: '2',
-        title: 'Test Survey 2',
-        description: 'Description 2',
-        creatorId: 'user-123',
-        published: true,
-      },
+      { id: '1', title: 'Survey 1', description: 'Desc 1' },
+      { id: '2', title: 'Survey 2', description: 'Desc 2' },
     ];
-    
-    store.setSurveys(mockSurveys);
-    expect(store.surveys).toEqual(mockSurveys);
-    expect(store.surveys.length).toBe(2);
+
+    useSurveyStore.getState().setSurveys(mockSurveys);
+    expect(useSurveyStore.getState().surveys).toEqual(mockSurveys);
+
+    useSurveyStore.getState().setLoading(true);
+    expect(useSurveyStore.getState().loading).toBe(true);
   });
 
-  it('should set current survey', () => {
-    const store = useSurveyStore.getState();
-    const mockSurvey = {
-      id: '1',
-      title: 'Test Survey',
-      description: 'Description',
-      creatorId: 'user-123',
-      published: false,
-      questions: [],
-    };
-    
-    store.setCurrentSurvey(mockSurvey);
-    expect(store.currentSurvey).toEqual(mockSurvey);
+  it('fetches surveys through refreshSurveys', async () => {
+    const mockData = [{ id: 'survey-1', title: 'Remote Survey' }];
+    mockedAxios.get.mockResolvedValueOnce({ data: mockData });
+
+    await useSurveyStore.getState().refreshSurveys();
+
+    expect(mockedAxios.get).toHaveBeenCalledWith('http://localhost:8080/api/surveys/my-surveys');
+    expect(useSurveyStore.getState().surveys).toEqual(mockData);
+    expect(useSurveyStore.getState().loading).toBe(false);
   });
 
-  it('should add survey to list', () => {
-    const store = useSurveyStore.getState();
-    const mockSurvey = {
-      id: '1',
-      title: 'New Survey',
-      description: 'New Description',
-      creatorId: 'user-123',
-      published: false,
-    };
-    
-    store.addSurvey(mockSurvey);
-    expect(store.surveys.length).toBe(1);
-    expect(store.surveys[0]).toEqual(mockSurvey);
+  it('fetches published surveys', async () => {
+    const published = [{ id: 'pub-1', title: 'Published' }];
+    mockedAxios.get.mockResolvedValueOnce({ data: published });
+
+    await useSurveyStore.getState().refreshPublishedSurveys();
+
+    expect(mockedAxios.get).toHaveBeenCalledWith('http://localhost:8080/api/surveys/published');
+    expect(useSurveyStore.getState().publishedSurveys).toEqual(published);
   });
 
-  it('should update survey in list', () => {
-    const store = useSurveyStore.getState();
-    const mockSurvey = {
-      id: '1',
-      title: 'Original Title',
-      description: 'Original Description',
-      creatorId: 'user-123',
-      published: false,
-    };
-    
-    store.setSurveys([mockSurvey]);
-    
-    const updatedSurvey = {
-      ...mockSurvey,
-      title: 'Updated Title',
-    };
-    
-    store.updateSurvey(updatedSurvey);
-    expect(store.surveys[0].title).toBe('Updated Title');
+  it('creates a survey and refreshes the list', async () => {
+    const newSurvey = { id: 'created-1', title: 'New Survey' };
+    mockedAxios.post.mockResolvedValueOnce({ data: newSurvey });
+    mockedAxios.get.mockResolvedValueOnce({ data: [] });
+
+    const payload = { title: 'New Survey', description: 'Desc' };
+    const result = await useSurveyStore.getState().createSurvey(payload);
+
+    expect(mockedAxios.post).toHaveBeenCalledWith('http://localhost:8080/api/surveys', payload);
+    expect(mockedAxios.get).toHaveBeenCalledWith('http://localhost:8080/api/surveys/my-surveys');
+    expect(result).toEqual(newSurvey);
   });
 
-  it('should remove survey from list', () => {
-    const store = useSurveyStore.getState();
-    const mockSurveys = [
-      {
-        id: '1',
-        title: 'Survey 1',
-        description: 'Description 1',
-        creatorId: 'user-123',
-        published: false,
-      },
-      {
-        id: '2',
-        title: 'Survey 2',
-        description: 'Description 2',
-        creatorId: 'user-123',
-        published: false,
-      },
-    ];
-    
-    store.setSurveys(mockSurveys);
-    expect(store.surveys.length).toBe(2);
-    
-    store.removeSurvey('1');
-    expect(store.surveys.length).toBe(1);
-    expect(store.surveys[0].id).toBe('2');
+  it('updates a survey via the API', async () => {
+    const updatedSurvey = { id: 'survey-1', title: 'Updated' };
+    mockedAxios.put.mockResolvedValueOnce({ data: updatedSurvey });
+    mockedAxios.get.mockResolvedValueOnce({ data: [] });
+
+    const payload = { title: 'Updated', description: 'Desc' };
+    const result = await useSurveyStore.getState().updateSurvey('survey-1', payload);
+
+    expect(mockedAxios.put).toHaveBeenCalledWith('http://localhost:8080/api/surveys/survey-1', payload);
+    expect(result).toEqual(updatedSurvey);
   });
 
-  it('should set loading state', () => {
-    const store = useSurveyStore.getState();
-    
-    store.setLoading(true);
-    expect(store.isLoading).toBe(true);
-    
-    store.setLoading(false);
-    expect(store.isLoading).toBe(false);
+  it('deletes a survey and refreshes', async () => {
+    mockedAxios.delete.mockResolvedValueOnce({});
+    mockedAxios.get.mockResolvedValueOnce({ data: [] });
+
+    await useSurveyStore.getState().deleteSurvey('survey-1');
+
+    expect(mockedAxios.delete).toHaveBeenCalledWith('http://localhost:8080/api/surveys/survey-1');
+    expect(mockedAxios.get).toHaveBeenCalledWith('http://localhost:8080/api/surveys/my-surveys');
   });
 
-  it('should set error', () => {
-    const store = useSurveyStore.getState();
-    const errorMessage = 'Test error';
-    
-    store.setError(errorMessage);
-    expect(store.error).toBe(errorMessage);
+  it('publishes surveys', async () => {
+    const publishedSurvey = { id: 'survey-1', published: true };
+    mockedAxios.put.mockResolvedValueOnce({ data: publishedSurvey });
+    mockedAxios.get.mockResolvedValueOnce({ data: [] });
+
+    const result = await useSurveyStore.getState().publishSurvey('survey-1');
+
+    expect(mockedAxios.put).toHaveBeenCalledWith('http://localhost:8080/api/surveys/survey-1/publish');
+    expect(result).toEqual(publishedSurvey);
   });
 
-  it('should clear error', () => {
-    const store = useSurveyStore.getState();
-    
-    store.setError('Test error');
-    expect(store.error).toBe('Test error');
-    
-    store.clearError();
-    expect(store.error).toBeNull();
+  it('manages questions via API helpers', async () => {
+    mockedAxios.post.mockResolvedValueOnce({ data: { id: 'question-1' } });
+    mockedAxios.put.mockResolvedValueOnce({ data: { id: 'question-1', text: 'Updated question' } });
+    mockedAxios.delete.mockResolvedValueOnce({ data: {} });
+
+    await useSurveyStore.getState().addQuestion('survey-1', { text: 'Question?' });
+    expect(mockedAxios.post).toHaveBeenCalledWith(
+      'http://localhost:8080/api/surveys/survey-1/questions',
+      { text: 'Question?' },
+    );
+
+    await useSurveyStore.getState().updateQuestion('survey-1', 'question-1', { text: 'Updated question' });
+    expect(mockedAxios.put).toHaveBeenCalledWith(
+      'http://localhost:8080/api/surveys/survey-1/questions/question-1',
+      { text: 'Updated question' },
+    );
+
+    await useSurveyStore.getState().deleteQuestion('survey-1', 'question-1');
+    expect(mockedAxios.delete).toHaveBeenCalledWith(
+      'http://localhost:8080/api/surveys/survey-1/questions/question-1',
+    );
   });
 });

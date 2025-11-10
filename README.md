@@ -197,7 +197,7 @@ El backend incluye **Swagger UI** para documentación interactiva de la API.
 
 Con el backend ejecutándose, abre tu navegador en:
 
-**http://localhost:8080/swagger-ui.html**
+**http://localhost:8080/api/swagger-ui/index.html**
 
 ### ✨ Características de Swagger
 
@@ -212,7 +212,7 @@ Con el backend ejecutándose, abre tu navegador en:
 
 #### 1. Abrir Swagger UI
 ```
-http://localhost:8080/swagger-ui.html
+http://localhost:8080/api/swagger-ui/index.html
 ```
 
 #### 2. Registrar un usuario (si no tienes uno)
@@ -269,7 +269,7 @@ cd prueba_davivienda_backend
 mvn spring-boot:run
 
 # 2. Abre Swagger en tu navegador
-# http://localhost:8080/swagger-ui.html
+# http://localhost:8080/api/swagger-ui/index.html
 
 # 3. Obtén un token:
 #    POST /auth/login
@@ -308,7 +308,7 @@ mvn spring-boot:run
 
 **Swagger no carga:**
 - Verificar que el backend esté ejecutándose
-- Acceder a http://localhost:8080/swagger-ui.html (con `/swagger-ui.html` al final)
+- Acceder a http://localhost:8080/api/swagger-ui/index.html
 - Revisar la consola del backend por errores
 - Verificar que la dependencia `springdoc-openapi-starter-webmvc-ui` esté en el pom.xml
 
